@@ -20,7 +20,7 @@ Wia (pronounced `/wil/`, like will) is a **full framework** for building large a
 [cli-status]: https://img.shields.io/npm/v/@wiajs/cli.svg
 [f7-status]: https://img.shields.io/npm/v/@wiajs/f7.svg
 
-[vue-router-package]: https://npmjs.com/package/@wiajs/router
+[router-package]: https://npmjs.com/package/@wiajs/router
 [f7-package]: https://npmjs.com/package/@wiajs/f7
 [cli-package]: https://npmjs.com/package/@wiajs/cli
 
