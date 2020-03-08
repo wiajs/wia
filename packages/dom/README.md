@@ -16,13 +16,13 @@ You will need Node.js installed on your system.
 
 First, install all required dependencies
 
-```
+```bash
 $ npm install
 ```
 
 To build development version:
 
-```
+```bash
 $ npm run build-dev
 ```
 
@@ -33,7 +33,7 @@ The resulting files are:
 
 To build production (minified) version:
 
-```
+```bash
 $ npm run build
 ```
 

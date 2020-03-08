@@ -1,7 +1,7 @@
 {
   "name": "@wiajs/dom",
   "version": "0.1.1",
-  "description": "Fork from zeptoJS and dom7. Minimalistic JavaScript library for DOM manipulation, with a jQuery-compatible API",
+  "description": "Fork from jquery/zepto and dom7. Minimalistic JavaScript library for DOM manipulation",
   "main": "dist/dom.js",
   "types": "dist/dom.d.ts",
   "scripts": {

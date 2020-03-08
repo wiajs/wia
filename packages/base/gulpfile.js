@@ -10,7 +10,6 @@ const env = process.env.NODE_ENV || 'development';
 const prj = 'base';
 const src = `./src`;
 const out = `./dist`;
-const map = `./map`;
 console.log(`env:${env} src:${src} out:${out} map:${map}`);
 
 const banner = `/*!
@@ -18,7 +17,6 @@ const banner = `/*!
   * (c) ${new Date().getFullYear()} Sibyl Yu
   * @license MIT
   */`;
-
 
 // UMD DIST
 function umd(cb) {
@@ -34,7 +32,7 @@ function umd(cb) {
         strict: true,
         file: `${out}/base.js`,
         format: 'umd',
-        name: 'Base',
+        name: 'WiaBase',
         sourcemap: env === 'development',
         // sourcemapFile: `${map}/base.js.map`,
         banner,

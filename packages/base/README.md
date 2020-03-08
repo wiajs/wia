@@ -2,7 +2,7 @@
 
 ## wia's base module
 
-@wiajs/base - is the base module of [wia](https://www.wia.pub). Base must be included in index.html.
+@wiajs/base - are the base modules of [wia](https://www.wia.pub). Base must included by index.html.
 
 ```html
 <script src="index.js"></script>
