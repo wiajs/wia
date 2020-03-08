@@ -24,11 +24,11 @@ Wia (pronounced `/wil/`, like will) is a **full framework** for building large i
 
 ## Ecosystem
 
-| Project | Status | Description |
+| Project  | Status                             | Description      |
 | -------- | ---------------------------------- | ---------------- |
 | [router] | [![router-status]][router-package] | App Page routing |
 | [cli]    | [![cli-status]][cli-package]       | App scaffolding  |
-| [f7]              | [![f7-status]][f7-package] | UI integration |
+| [f7]     | [![f7-status]][f7-package]         | UI integration   |
 
 [router]: https://github.com/wiajs/router
 [f7]: https://github.com/wiajs/f7
