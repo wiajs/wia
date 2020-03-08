@@ -30,7 +30,7 @@ document.ready = function(cb) {
   else {
     var handler = function() {
       document.removeEventListener('DOMContentLoaded', handler, false);
-      window.removeEventListener('load', handler, false);
+     z window.removeEventListener('load', handler, false);
       cb($);
     };
     document.addEventListener('DOMContentLoaded', handler, false);
