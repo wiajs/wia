@@ -1,0 +1,45 @@
+{
+  "name": "@wiajs/core",
+  "version": "0.1.1",
+  "description": "wia app core package. Part of the code is borrowed Framework7.",
+  "main": "dist/core.js",
+  "scripts": {
+    "build": "cross-env NODE_ENV=production gulp build",
+    "build-dev": "cross-env NODE_ENV=development gulp build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wiajs/wia.git"
+  },
+  "keywords": [
+    "wia",
+    "core"
+  ],
+  "author": {
+    "name": "Sibyl Yu",
+    "email": "sibyl@wia.pub"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/wiajs/core/issues"
+  },
+  "homepage": "https://www.wia.pub/core",
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "babel-eslint": "^10.0.2",
+    "cross-env": "^5.2.0",
+    "debug": "^4.1.1",
+    "eslint": "^6.1.0",
+    "eslint-config-airbnb": "^17.1.1",
+    "eslint-config-airbnb-base": "^13.2.0",
+    "eslint-plugin-graphql": "^3.0.3",
+    "eslint-plugin-import": "^2.18.2",
+    "eslint-plugin-jsx-a11y": "^6.2.3",
+    "eslint-plugin-react": "^7.14.3"
+  },
+  "dependencies": {
+    "@wiajs/dom": "^0.1.0"
+  }
+}
