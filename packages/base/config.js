@@ -7,7 +7,7 @@ const replace = require('rollup-plugin-replace');
 
 const version = process.env.VERSION || require('./package.json').version;
 const banner = `/*!
-  * wia core v${version}
+  * wia base v${version}
   * (c) ${new Date().getFullYear()} Sibyl Yu
   * @license MIT
   */`;
@@ -19,15 +19,15 @@ const resolve = _path => path.resolve(__dirname, './', _path);
 module.exports = [
   // browser dev
   {
-    file: resolve('dist/core.umd.js'),
+    file: resolve('dist/base.umd.js'),
     format: 'umd',
   },
   {
-    file: resolve('dist/core.common.js'),
+    file: resolve('dist/base.common.js'),
     format: 'cjs',
   },
   {
-    file: resolve('dist/core.esm.js'),
+    file: resolve('dist/base.esm.js'),
     format: 'es',
   },
 ].map(genConfig);
@@ -54,7 +54,7 @@ function genConfig(opts) {
       format: opts.format,
       sourcemap: process.env.NODE_ENV === 'development',
       banner,
-      name: '@wiajs/Core',
+      name: '$',
       globals: {}, // 全局变量
     },
   };

@@ -38,3 +38,5 @@ $.M = {};
 Object.keys(Module).forEach(k => {
   $.M[k] = Module[k];
 });
+
+export default $;

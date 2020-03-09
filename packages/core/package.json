@@ -1,8 +1,10 @@
 {
   "name": "@wiajs/core",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "wia app core package. Part of the code is borrowed Framework7.",
   "main": "dist/core.js",
+  "module": "dist/core.esm.js",
+  "types": "dist/core.d.ts",
   "scripts": {
     "build": "cross-env NODE_ENV=production gulp build",
     "build-dev": "cross-env NODE_ENV=development gulp build"
@@ -37,7 +39,13 @@
     "eslint-plugin-graphql": "^3.0.3",
     "eslint-plugin-import": "^2.18.2",
     "eslint-plugin-jsx-a11y": "^6.2.3",
-    "eslint-plugin-react": "^7.14.3"
+    "eslint-plugin-react": "^7.14.3",
+    "gulp": "^4.0.2",
+    "rollup": "^1.18.0",
+    "rollup-plugin-babel": "^4.3.3",
+    "rollup-plugin-commonjs": "^10.1.0",
+    "rollup-plugin-node-resolve": "^5.2.0",
+    "rollup-plugin-replace": "^2.2.0"
   },
   "dependencies": {
     "@wiajs/dom": "^0.1.0"

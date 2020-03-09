@@ -1,8 +1,9 @@
 {
   "name": "@wiajs/dom",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Fork from jquery/zepto and dom7. Minimalistic JavaScript library for DOM manipulation",
   "main": "dist/dom.js",
+  "module": "dist/dom.esm.js",
   "types": "dist/dom.d.ts",
   "scripts": {
     "build": "cross-env NODE_ENV=production gulp build",
@@ -41,7 +42,10 @@
     "eslint-plugin-react": "^7.14.3",
     "gulp": "^4.0.2",
     "rollup": "^1.18.0",
-    "rollup-plugin-buble": "^0.19.8",
-    "rollup-plugin-node-resolve": "^5.2.0"
+    "rollup-plugin-babel": "^4.3.3",
+    "rollup-plugin-commonjs": "^10.1.0",
+    "rollup-plugin-node-resolve": "^5.2.0",
+    "rollup-plugin-replace": "^2.2.0",
+    "terser": "^4.4.0"
   }
 }

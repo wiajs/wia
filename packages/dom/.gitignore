@@ -1,0 +1,11 @@
+.DS_Store
+node_modules
+*.log
+explorations
+TODOs.md
+dist/*.gz
+dist/*.map
+test/e2e/reports
+test/e2e/screenshots
+coverage
+RELEASE_NOTE*.md

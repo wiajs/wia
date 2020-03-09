@@ -2,8 +2,7 @@
   "name": "wia",
   "version": "0.1.1",
   "description": "Full framework for building large and fast web app quickly.",
-  "scripts": {
-  },
+  "scripts": {},
   "repository": {
     "type": "git",
     "url": "git+https://github.com/wiajs/wia.git"
@@ -41,6 +40,5 @@
     "rollup-plugin-node-resolve": "^5.2.0",
     "rollup-plugin-replace": "^2.2.0"
   },
-  "dependencies": {
-  }
+  "dependencies": {}
 }

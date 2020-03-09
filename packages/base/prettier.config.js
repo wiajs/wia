@@ -1,10 +1,10 @@
 module.exports = {
-  tabWidth: 2, // Ê¹ÓÃ 2 ¸ö¿Õ¸ñËõ½ø
-  useTabs: false, // ²»Ê¹ÓÃËõ½ø·û£¬¶øÊ¹ÓÃ¿Õ¸ñ
-  semi: true, // ÐÐÎ²ÐèÒªÓÐ·ÖºÅ  
-  singleQuote: true, // Ê¹ÓÃµ¥ÒýºÅ
-  bracketSpacing: false, // ´óÀ¨ºÅÄÚµÄÊ×Î²ÐèÒª¿Õ¸ñ
-  trailingComma: 'es5', // Ä©Î²ÊÇ·ñÐèÒª¶ººÅ
-  jsxBracketSameLine: true, // jsx ±êÇ©µÄ·´¼âÀ¨ºÅ²»»»ÐÐ
-  arrowParens: 'avoid' // ¾¡¿ÉÄÜÊ¡ÂÔ¼ýÍ·º¯Êý²ÎÊýÀ¨ºÅ¡£ Ê¾Àý£ºx => x
+  tabWidth: 2, // ä½¿ç”¨ 2 ä¸ªç©ºæ ¼ç¼©è¿›
+  useTabs: false, // ä¸ä½¿ç”¨ç¼©è¿›ç¬¦ï¼Œè€Œä½¿ç”¨ç©ºæ ¼
+  semi: true, // è¡Œå°¾éœ€è¦æœ‰åˆ†å·  
+  singleQuote: true, // ä½¿ç”¨å•å¼•å·
+  bracketSpacing: false, // å¤§æ‹¬å·å†…çš„é¦–å°¾éœ€è¦ç©ºæ ¼
+  trailingComma: 'es5', // æœ«å°¾æ˜¯å¦éœ€è¦é€—å·
+  jsxBracketSameLine: true, // jsx æ ‡ç­¾çš„åå°–æ‹¬å·ä¸æ¢è¡Œ
+  arrowParens: 'avoid' // å°½å¯èƒ½çœç•¥ç®­å¤´å‡½æ•°å‚æ•°æ‹¬å·ã€‚ ç¤ºä¾‹ï¼šx => x
 };
