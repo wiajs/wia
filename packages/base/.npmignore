@@ -1,0 +1,7 @@
+__tests__
+__mocks__
+.git
+.vscode
+.version
+node_modules
+src
