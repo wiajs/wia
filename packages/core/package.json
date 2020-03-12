@@ -1,8 +1,8 @@
 {
   "name": "@wiajs/core",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "wia app core package. Part of the code is borrowed Framework7.",
-  "main": "dist/core.js",
+  "main": "index.js",
   "types": "dist/core.d.ts",
   "scripts": {
     "build": "cross-env NODE_ENV=production gulp build",

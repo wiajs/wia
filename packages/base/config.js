@@ -19,7 +19,7 @@ const resolve = _path => path.resolve(__dirname, './', _path);
 module.exports = [
   // browser dev
   {
-    file: resolve('dist/base.umd.js'),
+    file: resolve('dist/base.js'),
     format: 'umd',
   },
   {

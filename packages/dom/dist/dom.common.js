@@ -1,5 +1,5 @@
 /*!
-  * wia dom v0.1.1
+  * wia dom v0.1.2
   * (c) 2020 Sibyl Yu
   * @license MIT
   */
@@ -259,28 +259,30 @@ function on() {
 
     if (!targetSelector) {
       for (j = 0; j < events.length; j += 1) {
-        var event = events[j];
+        var _event = events[j];
         if (!el.domListeners) el.domListeners = {};
-        if (!el.domListeners[event]) el.domListeners[event] = [];
-        el.domListeners[event].push({
+        if (!el.domListeners[_event]) el.domListeners[_event] = [];
+
+        el.domListeners[_event].push({
           listener: listener,
           proxyListener: handleEvent
         });
-        el.addEventListener(event, handleEvent, capture);
+
+        el.addEventListener(_event, handleEvent, capture);
       }
     } else {
       // Live events
       for (j = 0; j < events.length; j += 1) {
-        var _event = events[j];
+        var _event2 = events[j];
         if (!el.domLiveListeners) el.domLiveListeners = {};
-        if (!el.domLiveListeners[_event]) el.domLiveListeners[_event] = [];
+        if (!el.domLiveListeners[_event2]) el.domLiveListeners[_event2] = [];
 
-        el.domLiveListeners[_event].push({
+        el.domLiveListeners[_event2].push({
           listener: listener,
           proxyListener: handleLiveEvent
         });
 
-        el.addEventListener(_event, handleLiveEvent, capture);
+        el.addEventListener(_event2, handleLiveEvent, capture);
       }
     }
   }
@@ -309,16 +311,16 @@ function off() {
   var events = eventType.split(' ');
 
   for (var i = 0; i < events.length; i += 1) {
-    var event = events[i];
+    var _event3 = events[i];
 
     for (var j = 0; j < this.length; j += 1) {
       var el = this[j];
       var handlers = void 0;
 
       if (!targetSelector && el.domListeners) {
-        handlers = el.domListeners[event];
+        handlers = el.domListeners[_event3];
       } else if (targetSelector && el.domLiveListeners) {
-        handlers = el.domLiveListeners[event];
+        handlers = el.domLiveListeners[_event3];
       }
 
       if (handlers && handlers.length) {
@@ -326,13 +328,13 @@ function off() {
           var handler = handlers[k];
 
           if (listener && handler.listener === listener) {
-            el.removeEventListener(event, handler.proxyListener, capture);
+            el.removeEventListener(_event3, handler.proxyListener, capture);
             handlers.splice(k, 1);
           } else if (listener && handler.listener && handler.listener.domproxy && handler.listener.domproxy === listener) {
-            el.removeEventListener(event, handler.proxyListener, capture);
+            el.removeEventListener(_event3, handler.proxyListener, capture);
             handlers.splice(k, 1);
           } else if (!listener) {
-            el.removeEventListener(event, handler.proxyListener, capture);
+            el.removeEventListener(_event3, handler.proxyListener, capture);
             handlers.splice(k, 1);
           }
         }
@@ -388,21 +390,21 @@ function trigger() {
   var eventData = args[1];
 
   for (var i = 0; i < events.length; i += 1) {
-    var event = events[i];
+    var _event4 = events[i];
 
     for (var j = 0; j < this.length; j += 1) {
       var el = this[j];
       var evt = void 0;
 
       try {
-        evt = new window.CustomEvent(event, {
+        evt = new window.CustomEvent(_event4, {
           detail: eventData,
           bubbles: true,
           cancelable: true
         });
       } catch (e) {
         evt = document.createEvent('Event');
-        evt.initEvent(event, true, true);
+        evt.initEvent(_event4, true, true);
         evt.detail = eventData;
       } // eslint-disable-next-line
 
@@ -549,21 +551,21 @@ function hide() {
 
 function show() {
   return this.each(function () {
-    this.style.display === "none" && (this.style.display = '');
-    if (getComputedStyle(this, '').getPropertyValue("display") === "none") this.style.display = 'block'; //defaultDisplay(this.nodeName)
+    this.style.display === 'none' && (this.style.display = '');
+    if (getComputedStyle(this, '').getPropertyValue('display') === 'none') this.style.display = 'block'; //defaultDisplay(this.nodeName)
   });
   /*
-   for (let i = 0; i < this.length; i += 1) {
-     const el = this[i];
-     if (el.style.display === 'none') {
-       el.style.display = '';
-     }
-     if (window.getComputedStyle(el, null).getPropertyValue('display') === 'none') {
-       // Still not visible
-       el.style.display = 'block';
-     }
-   }
-   return this;
+  for (let i = 0; i < this.length; i += 1) {
+    const el = this[i];
+    if (el.style.display === 'none') {
+      el.style.display = '';
+    }
+    if (window.getComputedStyle(el, null).getPropertyValue('display') === 'none') {
+      // Still not visible
+      el.style.display = 'block';
+    }
+  }
+  return this;
   */
 }
 
@@ -1015,11 +1017,6 @@ function find(selector) {
   return new Dom(foundElements);
 }
 
-function hasChild() {
-  if (!this.dom) return false;
-  return this.dom.children.length > 0;
-}
-
 function children(selector) {
   var children = []; // eslint-disable-line
 
@@ -1088,6 +1085,224 @@ function empty() {
 
   return this;
 }
+/**
+ * 是否包含子元素
+ */
+
+
+function hasChild() {
+  if (!this.dom) return false;
+  return this.dom.children.length > 0;
+}
+/**
+ * 第一个子元素节点，不含文本节点
+ */
+
+
+function firstChild() {
+  if (!this.dom || this.dom.children.length === 0) return null;
+  return this.dom.children[0];
+}
+/**
+ * 下一个子元素节点，不含或文本节点
+ */
+
+
+function nextNode() {
+  var R = null;
+  if (!this.dom || this.dom.children.length === 0) return null;
+  var nd = this.dom.nextSibling;
+
+  while (nd) {
+    if (nd.nodeType === 1) {
+      // 元素节点
+      R = nd;
+      break;
+    }
+
+    nd = this.dom.nextSibling;
+  }
+
+  return R;
+}
+/**
+ * 最后一个子元素节点，不含文本节点
+ */
+
+
+function lastChild() {
+  if (!this.dom || this.dom.children.length === 0) return null;
+  return this.dom.children[this.dom.children.length - 1];
+}
+/**
+ * 元素子节点数量，不含文本节点
+ */
+
+
+function childCount() {
+  if (!this.dom) return 0;
+  return this.dom.children.length;
+}
+/**
+ * 返回的上级节点名称的元素节点
+ * ff parentNode 会返回 空 节点
+ * ff textNode节点 没有 tagName
+ */
+
+
+function upperTag(tag, len) {
+  if (len === void 0) {
+    len = 10;
+  }
+
+  var RC = null;
+  if (!this.dom) return null;
+  var tg = tag.toUpperCase();
+  var i = 0;
+  var nd = this.dom;
+
+  while (nd) {
+    i++;
+    if (i >= len) break;
+
+    if (nd.tagName && nd.tagName.toUpperCase() === tg) {
+      RC = nd;
+      break;
+    }
+
+    nd = nd.parentNode;
+  }
+
+  return RC;
+}
+/**
+ * 获取 指定 tagName的子元素
+ * @param tag
+ * @returns {*}
+ */
+
+
+function childTag(tag) {
+  var RC = null;
+  if (!this.dom) return null;
+
+  try {
+    for (var i = 0, len = this.dom.children.length; i < len; i++) {
+      var nd = this.dom.children[i];
+
+      if (nd.tagName && nd.tagName.toUpperCase() === tag.toUpperCase()) {
+        RC = nd;
+        break;
+      }
+    }
+  } catch (e) {
+    alert("childTag exp:" + e.message);
+  }
+
+  return RC;
+}
+/**
+ * 光标放入尾部
+ * @param el
+ */
+
+
+function cursorEnd() {
+  if (!this.dom) return null;
+  var el = this.dom;
+  el.focus();
+
+  if (typeof window.getSelection !== 'undefined' && typeof document.createRange !== 'undefined') {
+    var rg = document.createRange();
+    rg.selectNodeContents(el); // 合并光标
+
+    rg.collapse(false);
+    var sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(rg);
+  } else if (typeof document.body.createTextRangrge !== 'undefined') {
+    var _rg = document.body.createTextRange();
+
+    _rg.moveToElementText(el); // 合并光标
+
+
+    _rg.collapse(false); // textRange.moveStart('character', 3);
+
+
+    _rg.select();
+  }
+}
+/**
+ * 获取光标位置
+ * @returns {number}
+ */
+
+
+function getCursorPos() {
+  var R = 0;
+  if (!this.dom) return 0;
+  var el = this.dom; // obj.focus();
+
+  if (el.selectionStart) {
+    // IE以外
+    R = el.selectionStart;
+  } else {
+    // IE
+    var rg = null;
+
+    if (el.tagName.toLowerCase() === 'textarea') {
+      // TEXTAREA
+      rg = event.srcElement.createTextRange();
+      rg.moveToPoint(event.x, event.y);
+    } else {
+      // Text
+      rg = document.selection.createRange();
+    }
+
+    rg.moveStart('character', -event.srcElement.value.length); // rg.setEndPoint("StartToStart", obj.createTextRange())
+
+    R = rg.text.length;
+  }
+
+  return R;
+}
+/**
+ * 得到光标的位置
+ */
+
+
+function getCursorPosition() {
+  if (!this.dom) return 0;
+  var el = this.dom;
+  var qswh = '@#%#^&#*$'; // obj.focus();
+
+  var rng = document.selection.createRange();
+  rng.text = qswh;
+  var nPosition = el.value.indexOf(qswh);
+  rng.moveStart('character', -qswh.length);
+  rng.text = '';
+  return nPosition;
+}
+/**
+ * 设置光标位置
+ */
+
+
+function setCursorPos(pos) {
+  if (!this.dom) return;
+  var rg = this.dom.createTextRange();
+  rg.collapse(true);
+  rg.moveStart('character', pos);
+  rg.select();
+}
+/**
+ * 移到第一行
+ */
+
+
+function moveFirst() {
+  this.rowindex = 0;
+}
 
 var Methods = /*#__PURE__*/Object.freeze({
   attr: attr,
@@ -1142,6 +1357,17 @@ var Methods = /*#__PURE__*/Object.freeze({
   find: find,
   hasChild: hasChild,
   children: children,
+  firstChild: firstChild,
+  lastChild: lastChild,
+  nextNode: nextNode,
+  childCount: childCount,
+  upperTag: upperTag,
+  childTag: childTag,
+  cursorEnd: cursorEnd,
+  getCursorPos: getCursorPos,
+  getCursorPosition: getCursorPosition,
+  setCursorPos: setCursorPos,
+  moveFirst: moveFirst,
   remove: remove,
   detach: detach,
   add: add,

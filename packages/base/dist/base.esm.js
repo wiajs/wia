@@ -1,5 +1,5 @@
 /*!
-  * wia base v0.1.1
+  * wia base v0.1.2
   * (c) 2020 Sibyl Yu
   * @license MIT
   */
@@ -187,14 +187,15 @@ function $$1(sel, ctx) {
         var dom = document.getElementById(sel.substr(1));
         if (dom) R.push(dom);
       } else if (sel[0] === '<' && fragmentRE.test(sel)) R = fragment(sel, RegExp.$1, ctx), sel = null;else R = $$1.qsa(sel, ctx);
-    } else if ($$1.isFunction(sel)) // If a function is given, call it when the DOM is ready
-      return document.ready(sel);else if (D.isD(sel)) return sel;else {
+    } else if (sel.nodeType || sel === window || sel === document) {
+      R = [sel];
+      sel = null;
+    } else if (D.isD(sel)) return sel;else if ($$1.isFunction(sel)) return document.ready(sel);else {
       // normalize array if an array of nodes is given
       if ($$1.isArray(sel)) R = compact(sel); // Wrap DOM nodes.
       //else if ($.isObject(sel))
-      // Node/element
-      else if (sel.nodeType || sel === window || sel === document) R = [sel], sel = null; // If it's a html fragment, create nodes from it
-        else if (fragmentRE.test(sel)) R = fragment(sel, RegExp.$1, ctx), sel = null; // // If there's a context, create a collection on that context first, and select
+      // If it's a html fragment, create nodes from it
+      else if (fragmentRE.test(sel)) R = fragment(sel, RegExp.$1, ctx), sel = null; // // If there's a context, create a collection on that context first, and select
       // // nodes from there
       // else if (context !== undefined) return $(context).find(selector)
       // // And last but no least, if it's a CSS selector, use it to select nodes.

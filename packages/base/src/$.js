@@ -90,7 +90,7 @@ class D {
   hasClass(name) {
 		return emptyArray.some.call(this, function(el){
 			return el.classList.contains(name);
-		})
+    });
   }
 	
   toggleClass(className) {
@@ -207,18 +207,16 @@ function $(sel, ctx) {
       } else if (sel[0] === '<' && fragmentRE.test(sel))
         (R = fragment(sel, RegExp.$1, ctx)), (sel = null);
       else R = $.qsa(sel, ctx);
-    } else if ($.isFunction(sel))
-      // If a function is given, call it when the DOM is ready
-      return document.ready(sel);
-    else if (D.isD(sel)) return sel;
+    } else if (sel.nodeType || sel === window || sel === document) {
+      R = [sel];
+      sel = null;
+    } else if (D.isD(sel)) return sel;
+    else if ($.isFunction(sel)) return document.ready(sel);
     else {
       // normalize array if an array of nodes is given
       if ($.isArray(sel)) R = compact(sel);
       // Wrap DOM nodes.
       //else if ($.isObject(sel))
-      // Node/element
-      else if (sel.nodeType || sel === window || sel === document)
-        (R = [sel]), (sel = null);
       // If it's a html fragment, create nodes from it
       else if (fragmentRE.test(sel))
         (R = fragment(sel, RegExp.$1, ctx)), (sel = null);
@@ -407,7 +405,10 @@ $.fastLink = function() {
   try {
     const links = $.qus('a');
     links.forEach(link => {
-      if (link.href && (link.hasAttribute('fastlink') || link.hasAttribute('fastLink'))) {
+      if (
+        link.href &&
+        (link.hasAttribute('fastlink') || link.hasAttribute('fastLink'))
+      ) {
         //!$.has(link, 'no-fast')) {
         var touchStartY;
         link.ontouchstart = e => {
@@ -455,7 +456,7 @@ $.cancelAnimationFrame = function(id) {
 };
 $.deleteProps = function(obj){
 	const object = obj;
-	Object.keys(object).forEach((key) => {
+  Object.keys(object).forEach(key => {
 		try {
 			object[key] = null;
 		} catch (e) {
@@ -521,7 +522,8 @@ $.urlParam = function(url) {
 	let param;
 	let length;
 	if (typeof urlToParse === 'string' && urlToParse.length) {
-		urlToParse = urlToParse.indexOf('?') > -1 ? urlToParse.replace(/\S*\?/, '') : '';
+    urlToParse =
+      urlToParse.indexOf('?') > -1 ? urlToParse.replace(/\S*\?/, '') : '';
 		params = urlToParse.split('&').filter(paramsPart => paramsPart !== '');
 		length = params.length;
 

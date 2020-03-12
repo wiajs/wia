@@ -1,8 +1,8 @@
 {
   "name": "@wiajs/dom",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Fork from jquery/zepto and dom7. Minimalistic JavaScript library for DOM manipulation",
-  "main": "dist/dom.js",
+  "main": "index.js",
   "types": "dist/dom.d.ts",
   "scripts": {
     "build": "cross-env NODE_ENV=production gulp build",

@@ -5,8 +5,7 @@ const emptyArray = [];
 function attr(attrs, value) {
   if (arguments.length === 1 && typeof attrs === 'string') {
     // Get attr
-    if (this[0])
-      return this[0].getAttribute(attrs);
+    if (this[0]) return this[0].getAttribute(attrs);
     return undefined;
   }
 
@@ -37,8 +36,7 @@ function removeAttr(attr) {
 function prop(props, value) {
   if (arguments.length === 1 && typeof props === 'string') {
     // Get prop
-    if (this[0])
-      return this[0][props];
+    if (this[0]) return this[0][props];
   } else {
     // Set props
     for (let i = 0; i < this.length; i += 1) {
@@ -62,7 +60,7 @@ function data(key, value) {
     el = this[0];
     // Get value
     if (el) {
-      if (el.domElementDataStorage && (key in el.domElementDataStorage)) {
+      if (el.domElementDataStorage && key in el.domElementDataStorage) {
         return el.domElementDataStorage[key];
       }
 
@@ -78,8 +76,7 @@ function data(key, value) {
   // Set value
   for (let i = 0; i < this.length; i += 1) {
     el = this[i];
-    if (!el.domElementDataStorage)
-      el.domElementDataStorage = {};
+    if (!el.domElementDataStorage) el.domElementDataStorage = {};
     el.domElementDataStorage[key] = value;
   }
   return this;
@@ -95,8 +92,7 @@ function removeData(key) {
 }
 function dataset() {
   const el = this[0];
-  if (!el)
-    return undefined;
+  if (!el) return undefined;
   const dataset = {}; // eslint-disable-line
   if (el.dataset) {
     // eslint-disable-next-line
@@ -114,12 +110,9 @@ function dataset() {
   }
   // eslint-disable-next-line
   for (const key in dataset) {
-    if (dataset[key] === 'false')
-      dataset[key] = false;
-    else if (dataset[key] === 'true')
-      dataset[key] = true;
-    else if (parseFloat(dataset[key]) === dataset[key] * 1)
-      dataset[key] *= 1;
+    if (dataset[key] === 'false') dataset[key] = false;
+    else if (dataset[key] === 'true') dataset[key] = true;
+    else if (parseFloat(dataset[key]) === dataset[key] * 1) dataset[key] *= 1;
   }
   return dataset;
 }
@@ -141,7 +134,11 @@ function val(value) {
 
   for (let i = 0; i < dom.length; i += 1) {
     const el = dom[i];
-    if (Array.isArray(value) && el.multiple && el.nodeName.toLowerCase() === 'select') {
+    if (
+      Array.isArray(value) &&
+      el.multiple &&
+      el.nodeName.toLowerCase() === 'select'
+    ) {
       for (let j = 0; j < el.options.length; j += 1) {
         el.options[j].selected = value.indexOf(el.options[j].value) >= 0;
       }
@@ -183,14 +180,12 @@ function on(...args) {
 
   function handleLiveEvent(e) {
     const target = e.target;
-    if (!target)
-      return;
+    if (!target) return;
     const eventData = e.target.domEventData || [];
     if (eventData.indexOf(e) < 0) {
       eventData.unshift(e);
     }
-    if ($(target).is(targetSelector))
-      listener.apply(target, eventData);
+    if ($(target).is(targetSelector)) listener.apply(target, eventData);
     else {
       const parents = $(target).parents(); // eslint-disable-line
       for (let k = 0; k < parents.length; k += 1) {
@@ -213,10 +208,8 @@ function on(...args) {
     if (!targetSelector) {
       for (j = 0; j < events.length; j += 1) {
         const event = events[j];
-        if (!el.domListeners)
-          el.domListeners = {};
-        if (!el.domListeners[event])
-          el.domListeners[event] = [];
+        if (!el.domListeners) el.domListeners = {};
+        if (!el.domListeners[event]) el.domListeners[event] = [];
         el.domListeners[event].push({
           listener,
           proxyListener: handleEvent,
@@ -227,10 +220,8 @@ function on(...args) {
       // Live events
       for (j = 0; j < events.length; j += 1) {
         const event = events[j];
-        if (!el.domLiveListeners)
-          el.domLiveListeners = {};
-        if (!el.domLiveListeners[event])
-          el.domLiveListeners[event] = [];
+        if (!el.domLiveListeners) el.domLiveListeners = {};
+        if (!el.domLiveListeners[event]) el.domLiveListeners[event] = [];
         el.domLiveListeners[event].push({
           listener,
           proxyListener: handleLiveEvent,
@@ -247,8 +238,7 @@ function off(...args) {
     [eventType, listener, capture] = args;
     targetSelector = undefined;
   }
-  if (!capture)
-    capture = false;
+  if (!capture) capture = false;
 
   const events = eventType.split(' ');
   for (let i = 0; i < events.length; i += 1) {
@@ -267,7 +257,12 @@ function off(...args) {
           if (listener && handler.listener === listener) {
             el.removeEventListener(event, handler.proxyListener, capture);
             handlers.splice(k, 1);
-          } else if (listener && handler.listener && handler.listener.domproxy && handler.listener.domproxy === listener) {
+          } else if (
+            listener &&
+            handler.listener &&
+            handler.listener.domproxy &&
+            handler.listener.domproxy === listener
+          ) {
             el.removeEventListener(event, handler.proxyListener, capture);
             handlers.splice(k, 1);
           } else if (!listener) {
@@ -332,8 +327,7 @@ function transitionEnd(callback) {
   let i;
   function fireCallBack(e) {
     /* jshint validthis:true */
-    if (e.target !== this)
-      return;
+    if (e.target !== this) return;
     callback.call(this, e);
     for (i = 0; i < events.length; i += 1) {
       dom.off(events[i], fireCallBack);
@@ -352,8 +346,7 @@ function animationEnd(callback) {
   const dom = this;
   let i;
   function fireCallBack(e) {
-    if (e.target !== this)
-      return;
+    if (e.target !== this) return;
     callback.call(this, e);
     for (i = 0; i < events.length; i += 1) {
       dom.off(events[i], fireCallBack);
@@ -384,7 +377,11 @@ function outerWidth(includeMargins) {
     if (includeMargins) {
       // eslint-disable-next-line
       const styles = this.styles();
-      return this[0].offsetWidth + parseFloat(styles.getPropertyValue('margin-right')) + parseFloat(styles.getPropertyValue('margin-left'));
+      return (
+        this[0].offsetWidth +
+        parseFloat(styles.getPropertyValue('margin-right')) +
+        parseFloat(styles.getPropertyValue('margin-left'))
+      );
     }
     return this[0].offsetWidth;
   }
@@ -406,7 +403,11 @@ function outerHeight(includeMargins) {
     if (includeMargins) {
       // eslint-disable-next-line
       const styles = this.styles();
-      return this[0].offsetHeight + parseFloat(styles.getPropertyValue('margin-top')) + parseFloat(styles.getPropertyValue('margin-bottom'));
+      return (
+        this[0].offsetHeight +
+        parseFloat(styles.getPropertyValue('margin-top')) +
+        parseFloat(styles.getPropertyValue('margin-bottom'))
+      );
     }
     return this[0].offsetHeight;
   }
@@ -422,8 +423,8 @@ function offset() {
     const scrollTop = el === window ? window.scrollY : el.scrollTop;
     const scrollLeft = el === window ? window.scrollX : el.scrollLeft;
     return {
-      top: (box.top + scrollTop) - clientTop,
-      left: (box.left + scrollLeft) - clientLeft,
+      top: box.top + scrollTop - clientTop,
+      left: box.left + scrollLeft - clientLeft,
     };
   }
 
@@ -436,12 +437,12 @@ function hide() {
   return this;
 }
 function show() {
-	return this.each(function(){
-		this.style.display === "none" && (this.style.display = '')
-		if (getComputedStyle(this, '').getPropertyValue("display") === "none")
-			this.style.display = 'block'; //defaultDisplay(this.nodeName)
-	})
-	/*
+  return this.each(function() {
+    this.style.display === 'none' && (this.style.display = '');
+    if (getComputedStyle(this, '').getPropertyValue('display') === 'none')
+      this.style.display = 'block'; //defaultDisplay(this.nodeName)
+  });
+  /*
   for (let i = 0; i < this.length; i += 1) {
     const el = this[i];
     if (el.style.display === 'none') {
@@ -463,7 +464,8 @@ function css(props, value) {
   let i;
   if (arguments.length === 1) {
     if (typeof props === 'string') {
-      if (this[0]) return window.getComputedStyle(this[0], null).getPropertyValue(props);
+      if (this[0])
+        return window.getComputedStyle(this[0], null).getPropertyValue(props);
     } else {
       for (i = 0; i < this.length; i += 1) {
         // eslint-disable-next-line
@@ -492,18 +494,18 @@ function toArray() {
   return arr;
 }
 
-function each(callback){
-	emptyArray.some.call(this, function(el, idx){
-		return callback.call(el, idx, el) === false
-	})
-	return this;
+function each(callback) {
+  emptyArray.some.call(this, function(el, idx) {
+    return callback.call(el, idx, el) === false;
+  });
+  return this;
 }
-		
-function forEach(callback){
-	emptyArray.some.call(this, function(el, idx){
-		return callback.call(el, el, idx) === false
-	})
-	return this
+
+function forEach(callback) {
+  emptyArray.some.call(this, function(el, idx) {
+    return callback.call(el, el, idx) === false;
+  });
+  return this;
 }
 
 /*
@@ -586,7 +588,8 @@ function is(selector) {
   if (!el || typeof selector === 'undefined') return false;
   if (typeof selector === 'string') {
     if (el.matches) return el.matches(selector);
-    else if (el.webkitMatchesSelector) return el.webkitMatchesSelector(selector);
+    else if (el.webkitMatchesSelector)
+      return el.webkitMatchesSelector(selector);
     else if (el.msMatchesSelector) return el.msMatchesSelector(selector);
 
     compareWith = $(selector);
@@ -713,7 +716,10 @@ function insertAfter(selector) {
       after[0].parentNode.insertBefore(this[i], after[0].nextSibling);
     } else if (after.length > 1) {
       for (let j = 0; j < after.length; j += 1) {
-        after[j].parentNode.insertBefore(this[i].cloneNode(true), after[j].nextSibling);
+        after[j].parentNode.insertBefore(
+          this[i].cloneNode(true),
+          after[j].nextSibling
+        );
       }
     }
   }
@@ -721,13 +727,17 @@ function insertAfter(selector) {
 function next(selector) {
   if (this.length > 0) {
     if (selector) {
-      if (this[0].nextElementSibling && $(this[0].nextElementSibling).is(selector)) {
+      if (
+        this[0].nextElementSibling &&
+        $(this[0].nextElementSibling).is(selector)
+      ) {
         return new Dom([this[0].nextElementSibling]);
       }
       return new Dom([]);
     }
 
-    if (this[0].nextElementSibling) return new Dom([this[0].nextElementSibling]);
+    if (this[0].nextElementSibling)
+      return new Dom([this[0].nextElementSibling]);
     return new Dom([]);
   }
   return new Dom([]);
@@ -749,7 +759,10 @@ function prev(selector) {
   if (this.length > 0) {
     const el = this[0];
     if (selector) {
-      if (el.previousElementSibling && $(el.previousElementSibling).is(selector)) {
+      if (
+        el.previousElementSibling &&
+        $(el.previousElementSibling).is(selector)
+      ) {
         return new Dom([el.previousElementSibling]);
       }
       return new Dom([]);
@@ -781,7 +794,8 @@ function parent(selector) {
   for (let i = 0; i < this.length; i += 1) {
     if (this[i].parentNode !== null) {
       if (selector) {
-        if ($(this[i].parentNode).is(selector)) parents.push(this[i].parentNode);
+        if ($(this[i].parentNode).is(selector))
+          parents.push(this[i].parentNode);
       } else {
         parents.push(this[i].parentNode);
       }
@@ -824,13 +838,6 @@ function find(selector) {
   }
   return new Dom(foundElements);
 }
-
-function hasChild() {
-	if (!this.dom)
-		return false;
-	return this.dom.children.length > 0;
-}
-
 function children(selector) {
   const children = []; // eslint-disable-line
   for (let i = 0; i < this.length; i += 1) {
@@ -839,7 +846,10 @@ function children(selector) {
     for (let j = 0; j < childNodes.length; j += 1) {
       if (!selector) {
         if (childNodes[j].nodeType === 1) children.push(childNodes[j]);
-      } else if (childNodes[j].nodeType === 1 && $(childNodes[j]).is(selector)) {
+      } else if (
+        childNodes[j].nodeType === 1 &&
+        $(childNodes[j]).is(selector)
+      ) {
         children.push(childNodes[j]);
       }
     }
@@ -848,8 +858,7 @@ function children(selector) {
 }
 function remove() {
   for (let i = 0; i < this.length; i += 1) {
-    if (this[i].parentNode)
-      this[i].parentNode.removeChild(this[i]);
+    if (this[i].parentNode) this[i].parentNode.removeChild(this[i]);
   }
   return this;
 }
@@ -884,6 +893,209 @@ function empty() {
   return this;
 }
 
+/**
+ * 是否包含子元�
+ */
+function hasChild() {
+  if (!this.dom) return false;
+  return this.dom.children.length > 0;
+}
+
+/**
+ * 第一个子元素节点，不含文本节�
+ */
+function firstChild() {
+  if (!this.dom || this.dom.children.length === 0) return null;
+  return this.dom.children[0];
+}
+
+/**
+ * 下一个子元素节点，不含或文本节点
+ */
+function nextNode() {
+  let R = null;
+  if (!this.dom || this.dom.children.length === 0) return null;
+
+  let nd = this.dom.nextSibling;
+  while (nd) {
+    if (nd.nodeType === 1) {
+      // 元素节点
+      R = nd;
+      break;
+    }
+    nd = this.dom.nextSibling;
+  }
+  return R;
+}
+
+/**
+ * 最后一个子元素节点，不含文本节�
+ */
+function lastChild() {
+  if (!this.dom || this.dom.children.length === 0) return null;
+  return this.dom.children[this.dom.children.length - 1];
+}
+
+/**
+ * 元素子节点数量，不含文本节点
+ */
+function childCount() {
+  if (!this.dom) return 0;
+  return this.dom.children.length;
+}
+
+/**
+ * 返回的上级节点名称的元素节点
+ * ff parentNode 会返�?�?节点
+ * ff textNode节点 没有 tagName
+ */
+function upperTag(tag, len = 10) {
+  let RC = null;
+
+  if (!this.dom) return null;
+
+  const tg = tag.toUpperCase();
+
+  let i = 0;
+  let nd = this.dom;
+  while (nd) {
+    i++;
+    if (i >= len) break;
+    if (nd.tagName && nd.tagName.toUpperCase() === tg) {
+      RC = nd;
+      break;
+    }
+    nd = nd.parentNode;
+  }
+  return RC;
+}
+
+/**
+ * 获取 指定 tagName的子元素
+ * @param tag
+ * @returns {*}
+ */
+function childTag(tag) {
+  let RC = null;
+
+  if (!this.dom) return null;
+
+  try {
+    for (let i = 0, len = this.dom.children.length; i < len; i++) {
+      const nd = this.dom.children[i];
+
+      if (nd.tagName && nd.tagName.toUpperCase() === tag.toUpperCase()) {
+        RC = nd;
+        break;
+      }
+    }
+  } catch (e) {
+    alert(`childTag exp:${e.message}`);
+  }
+
+  return RC;
+}
+/**
+ * 光标放入尾部
+ * @param el
+ */
+function cursorEnd() {
+  if (!this.dom) return null;
+
+  const el = this.dom;
+  el.focus();
+
+  if (
+    typeof window.getSelection !== 'undefined' &&
+    typeof document.createRange !== 'undefined'
+  ) {
+    const rg = document.createRange();
+    rg.selectNodeContents(el);
+    // 合并光标
+    rg.collapse(false);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(rg);
+  } else if (typeof document.body.createTextRangrge !== 'undefined') {
+    const rg = document.body.createTextRange();
+    rg.moveToElementText(el);
+    // 合并光标
+    rg.collapse(false);
+    // textRange.moveStart('character', 3);
+    rg.select();
+  }
+}
+
+/**
+ * 获取光标位置
+ * @returns {number}
+ */
+function getCursorPos() {
+  let R = 0;
+
+  if (!this.dom) return 0;
+
+  const el = this.dom;
+
+  // obj.focus();
+  if (el.selectionStart) {
+    // IE以外
+    R = el.selectionStart;
+  } else {
+    // IE
+    let rg = null;
+    if (el.tagName.toLowerCase() === 'textarea') {
+      // TEXTAREA
+      rg = event.srcElement.createTextRange();
+      rg.moveToPoint(event.x, event.y);
+    } else {
+      // Text
+      rg = document.selection.createRange();
+    }
+    rg.moveStart('character', -event.srcElement.value.length);
+    // rg.setEndPoint("StartToStart", obj.createTextRange())
+    R = rg.text.length;
+  }
+  return R;
+}
+
+/**
+ * 得到光标的位�
+ */
+function getCursorPosition() {
+  if (!this.dom) return 0;
+
+  const el = this.dom;
+
+  const qswh = '@#%#^&#*$';
+  // obj.focus();
+  const rng = document.selection.createRange();
+  rng.text = qswh;
+  const nPosition = el.value.indexOf(qswh);
+  rng.moveStart('character', -qswh.length);
+  rng.text = '';
+  return nPosition;
+}
+
+/**
+ * 设置光标位置
+ */
+function setCursorPos(pos) {
+  if (!this.dom) return;
+
+  const rg = this.dom.createTextRange();
+  rg.collapse(true);
+  rg.moveStart('character', pos);
+  rg.select();
+}
+
+/**
+ * 移到第一�
+ */
+function moveFirst() {
+  this.rowindex = 0;
+}
+
 export {
   attr,
   removeAttr,
@@ -910,7 +1122,7 @@ export {
   styles,
   css,
   toArray,
-	each,
+  each,
   forEach,
   filter,
   map,
@@ -935,8 +1147,19 @@ export {
   parents,
   closest,
   find,
-	hasChild,
+  hasChild,
   children,
+  firstChild,
+  lastChild,
+  nextNode,
+  childCount,
+  upperTag,
+  childTag,
+  cursorEnd,
+  getCursorPos,
+  getCursorPosition,
+  setCursorPos,
+  moveFirst,
   remove,
   detach,
   add,

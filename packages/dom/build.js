@@ -47,11 +47,7 @@ function buildEntry({input, output}) {
             },
           }).code;
 
-        const f =
-          output.format === 'umd'
-            ? file.replace('.umd.js', '.min.js')
-            : file.replace('.js', '.min.js');
-        return write(f, minified, true);
+        return write(file.replace('.js', '.min.js'), minified, true);
       }
       // else {
       //   return write(file, code);
