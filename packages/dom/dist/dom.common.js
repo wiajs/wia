@@ -1,5 +1,5 @@
 /*!
-  * wia dom v0.1.2
+  * wia dom v0.1.4
   * (c) 2020 Sibyl Yu
   * @license MIT
   */
@@ -1086,7 +1086,7 @@ function empty() {
   return this;
 }
 /**
- * 是否包含子元素
+ * 是否包含子元�
  */
 
 
@@ -1095,7 +1095,7 @@ function hasChild() {
   return this.dom.children.length > 0;
 }
 /**
- * 第一个子元素节点，不含文本节点
+ * 第一个子元素节点，不含文本节�
  */
 
 
@@ -1126,7 +1126,7 @@ function nextNode() {
   return R;
 }
 /**
- * 最后一个子元素节点，不含文本节点
+ * 最后一个子元素节点，不含文本节�
  */
 
 
@@ -1145,7 +1145,7 @@ function childCount() {
 }
 /**
  * 返回的上级节点名称的元素节点
- * ff parentNode 会返回 空 节点
+ * ff parentNode 会返�?�?节点
  * ff textNode节点 没有 tagName
  */
 
@@ -1267,7 +1267,7 @@ function getCursorPos() {
   return R;
 }
 /**
- * 得到光标的位置
+ * 得到光标的位�
  */
 
 
@@ -1296,7 +1296,7 @@ function setCursorPos(pos) {
   rg.select();
 }
 /**
- * 移到第一行
+ * 移到第一�
  */
 
 
@@ -1305,6 +1305,7 @@ function moveFirst() {
 }
 
 var Methods = /*#__PURE__*/Object.freeze({
+  __proto__: null,
   attr: attr,
   removeAttr: removeAttr,
   prop: prop,
@@ -1551,6 +1552,7 @@ function scrollLeft() {
 }
 
 var Scroll = /*#__PURE__*/Object.freeze({
+  __proto__: null,
   scrollTo: scrollTo,
   scrollTop: scrollTop,
   scrollLeft: scrollLeft
@@ -1814,6 +1816,7 @@ function getTranslate(axis) {
 }
 
 var Animate = /*#__PURE__*/Object.freeze({
+  __proto__: null,
   animate: animate,
   stop: stop,
   getTranslate: getTranslate
@@ -2018,6 +2021,7 @@ function scroll() {
 }
 
 var eventShortcuts = /*#__PURE__*/Object.freeze({
+  __proto__: null,
   click: click,
   blur: blur,
   focus: focus,

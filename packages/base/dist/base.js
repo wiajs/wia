@@ -1,5 +1,5 @@
 /*!
-  * wia base v0.1.2
+  * wia base v0.1.4
   * (c) 2020 Sibyl Yu
   * @license MIT
   */
@@ -662,6 +662,7 @@
   }
 
   var Event = /*#__PURE__*/Object.freeze({
+    __proto__: null,
     on: on,
     off: off,
     once: once,
@@ -736,6 +737,7 @@
   }
 
   var Store = /*#__PURE__*/Object.freeze({
+    __proto__: null,
     set: set,
     get: get,
     remove: remove,
@@ -809,6 +811,7 @@
   }
 
   var Ajax = /*#__PURE__*/Object.freeze({
+    __proto__: null,
     get: get$1,
     post: post
   });
@@ -918,6 +921,7 @@
   } // public_path__
 
   var Module = /*#__PURE__*/Object.freeze({
+    __proto__: null,
     cache: _c,
     module: _m,
     load: load,
