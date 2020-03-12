@@ -1,5 +1,5 @@
 /*!
-  * wia core v0.1.4
+  * wia core v0.1.5
   * (c) 2020 Sibyl Yu
   * @license MIT
   */
@@ -179,6 +179,7 @@ var dom_common_min = createCommonjsModule(function (module) {
 var t = $.Dom,
     e = [];
 var n = Object.freeze({
+  __proto__: null,
   attr: function attr(t, e) {
     if (1 === arguments.length && "string" == typeof t) return this[0] ? this[0].getAttribute(t) : void 0;
 
@@ -302,15 +303,15 @@ var n = Object.freeze({
     var r = e[0],
         i = e[1],
         o = e[2],
-        s = e[3];
+        a = e[3];
 
-    function a(t) {
+    function s(t) {
       var e = t.target;
 
       if (e) {
         var n = t.target.domEventData || [];
-        if (n.indexOf(t) < 0 && n.unshift(t), $(e).is(i)) o.apply(e, n);else for (var r = $(e).parents(), s = 0; s < r.length; s += 1) {
-          $(r[s]).is(i) && o.apply(r[s], n);
+        if (n.indexOf(t) < 0 && n.unshift(t), $(e).is(i)) o.apply(e, n);else for (var r = $(e).parents(), a = 0; a < r.length; a += 1) {
+          $(r[a]).is(i) && o.apply(r[a], n);
         }
       }
     }
@@ -320,7 +321,7 @@ var n = Object.freeze({
       e.indexOf(t) < 0 && e.unshift(t), o.apply(this, e);
     }
 
-    "function" == typeof e[1] && (r = e[0], o = e[1], s = e[2], i = void 0), s || (s = !1);
+    "function" == typeof e[1] && (r = e[0], o = e[1], a = e[2], i = void 0), a || (a = !1);
 
     for (var h, u = r.split(" "), f = 0; f < this.length; f += 1) {
       var c = this[f];
@@ -328,14 +329,14 @@ var n = Object.freeze({
         var d = u[h];
         c.domLiveListeners || (c.domLiveListeners = {}), c.domLiveListeners[d] || (c.domLiveListeners[d] = []), c.domLiveListeners[d].push({
           listener: o,
-          proxyListener: a
-        }), c.addEventListener(d, a, s);
+          proxyListener: s
+        }), c.addEventListener(d, s, a);
       } else for (h = 0; h < u.length; h += 1) {
         var v = u[h];
         c.domListeners || (c.domListeners = {}), c.domListeners[v] || (c.domListeners[v] = []), c.domListeners[v].push({
           listener: o,
           proxyListener: l
-        }), c.addEventListener(v, l, s);
+        }), c.addEventListener(v, l, a);
       }
     }
 
@@ -349,16 +350,16 @@ var n = Object.freeze({
     var r = e[0],
         i = e[1],
         o = e[2],
-        s = e[3];
-    "function" == typeof e[1] && (r = e[0], o = e[1], s = e[2], i = void 0), s || (s = !1);
+        a = e[3];
+    "function" == typeof e[1] && (r = e[0], o = e[1], a = e[2], i = void 0), a || (a = !1);
 
-    for (var a = r.split(" "), l = 0; l < a.length; l += 1) {
-      for (var h = a[l], u = 0; u < this.length; u += 1) {
+    for (var s = r.split(" "), l = 0; l < s.length; l += 1) {
+      for (var h = s[l], u = 0; u < this.length; u += 1) {
         var f = this[u],
             c = void 0;
         if (!i && f.domListeners ? c = f.domListeners[h] : i && f.domLiveListeners && (c = f.domLiveListeners[h]), c && c.length) for (var d = c.length - 1; d >= 0; d -= 1) {
           var v = c[d];
-          o && v.listener === o ? (f.removeEventListener(h, v.proxyListener, s), c.splice(d, 1)) : o && v.listener && v.listener.domproxy && v.listener.domproxy === o ? (f.removeEventListener(h, v.proxyListener, s), c.splice(d, 1)) : o || (f.removeEventListener(h, v.proxyListener, s), c.splice(d, 1));
+          o && v.listener === o || o && v.listener && v.listener.domproxy && v.listener.domproxy === o ? (f.removeEventListener(h, v.proxyListener, a), c.splice(d, 1)) : o || (f.removeEventListener(h, v.proxyListener, a), c.splice(d, 1));
         }
       }
     }
@@ -372,18 +373,18 @@ var n = Object.freeze({
 
     var i = n[0],
         o = n[1],
-        s = n[2],
-        a = n[3];
+        a = n[2],
+        s = n[3];
 
     function l() {
       for (var e = arguments.length, n = new Array(e), r = 0; r < e; r++) {
         n[r] = arguments[r];
       }
 
-      s.apply(this, n), t.off(i, o, l, a), l.domproxy && delete l.domproxy;
+      a.apply(this, n), t.off(i, o, l, s), l.domproxy && delete l.domproxy;
     }
 
-    return "function" == typeof n[1] && (i = n[0], s = n[1], a = n[2], o = void 0), l.domproxy = s, t.on(i, o, l, a);
+    return "function" == typeof n[1] && (i = n[0], a = n[1], s = n[2], o = void 0), l.domproxy = a, t.on(i, o, l, s);
   },
   trigger: function trigger() {
     for (var t = arguments.length, e = new Array(t), n = 0; n < t; n++) {
@@ -391,18 +392,18 @@ var n = Object.freeze({
     }
 
     for (var r = e[0].split(" "), i = e[1], o = 0; o < r.length; o += 1) {
-      for (var s = r[o], a = 0; a < this.length; a += 1) {
-        var l = this[a],
+      for (var a = r[o], s = 0; s < this.length; s += 1) {
+        var l = this[s],
             h = void 0;
 
         try {
-          h = new window.CustomEvent(s, {
+          h = new window.CustomEvent(a, {
             detail: i,
             bubbles: !0,
             cancelable: !0
           });
         } catch (t) {
-          (h = document.createEvent("Event")).initEvent(s, !0, !0), h.detail = i;
+          (h = document.createEvent("Event")).initEvent(a, !0, !0), h.detail = i;
         }
 
         l.domEventData = e.filter(function (t, e) {
@@ -483,10 +484,10 @@ var n = Object.freeze({
           r = t.clientTop || n.clientTop || 0,
           i = t.clientLeft || n.clientLeft || 0,
           o = t === window ? window.scrollY : t.scrollTop,
-          s = t === window ? window.scrollX : t.scrollLeft;
+          a = t === window ? window.scrollX : t.scrollLeft;
       return {
         top: e.top + o - r,
-        left: e.left + s - i
+        left: e.left + a - i
       };
     }
 
@@ -886,19 +887,19 @@ var n = Object.freeze({
     return this.remove();
   },
   add: function add() {
-    for (var t, e, n = arguments.length, r = new Array(n), i = 0; i < n; i++) {
-      r[i] = arguments[i];
+    for (var t, e, n = this, r = arguments.length, i = new Array(r), o = 0; o < r; o++) {
+      i[o] = arguments[o];
     }
 
-    for (t = 0; t < r.length; t += 1) {
-      var o = $(r[t]);
+    for (t = 0; t < i.length; t += 1) {
+      var a = $(i[t]);
 
-      for (e = 0; e < o.length; e += 1) {
-        this[this.length] = o[e], this.length += 1;
+      for (e = 0; e < a.length; e += 1) {
+        n[n.length] = a[e], n.length += 1;
       }
     }
 
-    return this;
+    return n;
   },
   empty: function empty() {
     for (var t = 0; t < this.length; t += 1) {
@@ -917,6 +918,7 @@ var n = Object.freeze({
   }
 });
 var r = Object.freeze({
+  __proto__: null,
   scrollTo: function scrollTo() {
     for (var t = arguments.length, e = new Array(t), n = 0; n < t; n++) {
       e[n] = arguments[n];
@@ -925,9 +927,9 @@ var r = Object.freeze({
     var r = e[0],
         i = e[1],
         o = e[2],
-        s = e[3],
-        a = e[4];
-    return 4 === e.length && "function" == typeof s && (a = s, r = e[0], i = e[1], o = e[2], a = e[3], s = e[4]), void 0 === s && (s = "swing"), this.each(function () {
+        a = e[3],
+        s = e[4];
+    return 4 === e.length && "function" == typeof a && (s = a, r = e[0], i = e[1], o = e[2], s = e[3], a = e[4]), void 0 === a && (a = "swing"), this.each(function () {
       var t,
           e,
           n,
@@ -940,15 +942,15 @@ var r = Object.freeze({
           v = i > 0 || 0 === i,
           g = r > 0 || 0 === r;
 
-      if (void 0 === s && (s = "swing"), v && (t = d.scrollTop, o || (d.scrollTop = i)), g && (e = d.scrollLeft, o || (d.scrollLeft = r)), o) {
+      if (void 0 === a && (a = "swing"), v && (t = d.scrollTop, o || (d.scrollTop = i)), g && (e = d.scrollLeft, o || (d.scrollLeft = r)), o) {
         v && (n = d.scrollHeight - d.offsetHeight, h = Math.max(Math.min(i, n), 0)), g && (l = d.scrollWidth - d.offsetWidth, u = Math.max(Math.min(r, l), 0));
         var m = null;
         v && h === t && (v = !1), g && u === e && (g = !1), $.requestAnimationFrame(function n(r) {
           void 0 === r && (r = new Date().getTime()), null === m && (m = r);
           var i,
               l = Math.max(Math.min((r - m) / o, 1), 0),
-              p = "linear" === s ? l : .5 - Math.cos(l * Math.PI) / 2;
-          v && (f = t + p * (h - t)), g && (c = e + p * (u - e)), v && h > t && f >= h && (d.scrollTop = h, i = !0), v && h < t && f <= h && (d.scrollTop = h, i = !0), g && u > e && c >= u && (d.scrollLeft = u, i = !0), g && u < e && c <= u && (d.scrollLeft = u, i = !0), i ? a && a() : (v && (d.scrollTop = f), g && (d.scrollLeft = c), $.requestAnimationFrame(n));
+              p = "linear" === a ? l : .5 - Math.cos(l * Math.PI) / 2;
+          v && (f = t + p * (h - t)), g && (c = e + p * (u - e)), v && h > t && f >= h && (d.scrollTop = h, i = !0), v && h < t && f <= h && (d.scrollTop = h, i = !0), g && u > e && c >= u && (d.scrollLeft = u, i = !0), g && u < e && c <= u && (d.scrollLeft = u, i = !0), i ? s && s() : (v && (d.scrollTop = f), g && (d.scrollLeft = c), $.requestAnimationFrame(n));
         });
       }
     });
@@ -961,8 +963,10 @@ var r = Object.freeze({
     var r = e[0],
         i = e[1],
         o = e[2],
-        s = e[3];
-    return 3 === e.length && "function" == typeof o && (r = e[0], i = e[1], s = e[2], o = e[3]), void 0 === r ? this.length > 0 ? this[0].scrollTop : null : this.scrollTo(void 0, r, i, o, s);
+        a = e[3];
+    3 === e.length && "function" == typeof o && (r = e[0], i = e[1], a = e[2], o = e[3]);
+    var s = this;
+    return void 0 === r ? s.length > 0 ? s[0].scrollTop : null : s.scrollTo(void 0, r, i, o, a);
   },
   scrollLeft: function scrollLeft() {
     for (var t = arguments.length, e = new Array(t), n = 0; n < t; n++) {
@@ -972,8 +976,10 @@ var r = Object.freeze({
     var r = e[0],
         i = e[1],
         o = e[2],
-        s = e[3];
-    return 3 === e.length && "function" == typeof o && (r = e[0], i = e[1], s = e[2], o = e[3]), void 0 === r ? this.length > 0 ? this[0].scrollLeft : null : this.scrollTo(r, void 0, i, o, s);
+        a = e[3];
+    3 === e.length && "function" == typeof o && (r = e[0], i = e[1], a = e[2], o = e[3]);
+    var s = this;
+    return void 0 === r ? s.length > 0 ? s[0].scrollLeft : null : s.scrollTo(r, void 0, i, o, a);
   }
 });
 
@@ -987,6 +993,7 @@ $.getTranslate = function (t, e) {
 };
 
 var i = Object.freeze({
+  __proto__: null,
   animate: function animate(t, e) {
     var n,
         r = this,
@@ -1019,43 +1026,43 @@ var i = Object.freeze({
         if (i.animating) return i.que.push([t, e]), i;
         var n = [];
         i.elements.each(function (e, r) {
-          var o, s, a, l, h;
+          var o, a, s, l, h;
           r.dom7AnimateInstance || (i.elements[e].domAnimateInstance = i), n[e] = {
             container: r
           }, Object.keys(t).forEach(function (i) {
-            o = window.getComputedStyle(r, null).getPropertyValue(i).replace(",", "."), s = parseFloat(o), a = o.replace(s, ""), l = parseFloat(t[i]), h = t[i] + a, n[e][i] = {
+            o = window.getComputedStyle(r, null).getPropertyValue(i).replace(",", "."), a = parseFloat(o), s = o.replace(a, ""), l = parseFloat(t[i]), h = t[i] + s, n[e][i] = {
               initialFullValue: o,
-              initialValue: s,
-              unit: a,
+              initialValue: a,
+              unit: s,
               finalValue: l,
               finalFullValue: h,
-              currentValue: s
+              currentValue: a
             };
           });
         });
         var o,
-            s,
-            a = null,
+            a,
+            s = null,
             l = 0,
             h = 0,
             u = !1;
         return i.animating = !0, i.frameId = $.requestAnimationFrame(function f() {
           var c, d;
-          o = new Date().getTime(), u || (u = !0, e.begin && e.begin(r)), null === a && (a = o), e.progress && e.progress(r, Math.max(Math.min((o - a) / e.duration, 1), 0), a + e.duration - o < 0 ? 0 : a + e.duration - o, a), n.forEach(function (r) {
+          o = new Date().getTime(), u || (u = !0, e.begin && e.begin(r)), null === s && (s = o), e.progress && e.progress(r, Math.max(Math.min((o - s) / e.duration, 1), 0), s + e.duration - o < 0 ? 0 : s + e.duration - o, s), n.forEach(function (r) {
             var u = r;
-            s || u.done || Object.keys(t).forEach(function (r) {
-              if (!s && !u.done) {
-                c = Math.max(Math.min((o - a) / e.duration, 1), 0), d = i.easingProgress(e.easing, c);
+            a || u.done || Object.keys(t).forEach(function (r) {
+              if (!a && !u.done) {
+                c = Math.max(Math.min((o - s) / e.duration, 1), 0), d = i.easingProgress(e.easing, c);
                 var f = u[r],
                     v = f.initialValue,
                     g = f.finalValue,
                     m = f.unit;
                 u[r].currentValue = v + d * (g - v);
                 var p = u[r].currentValue;
-                (g > v && p >= g || g < v && p <= g) && (u.container.style[r] = g + m, (h += 1) === Object.keys(t).length && (u.done = !0, l += 1), l === n.length && (s = !0)), s ? i.done(e.complete) : u.container.style[r] = p + m;
+                (g > v && p >= g || g < v && p <= g) && (u.container.style[r] = g + m, (h += 1) === Object.keys(t).length && (u.done = !0, l += 1), l === n.length && (a = !0)), a ? i.done(e.complete) : u.container.style[r] = p + m;
               }
             });
-          }), s || (i.frameId = $.requestAnimationFrame(f));
+          }), a || (i.frameId = $.requestAnimationFrame(f));
         }), i;
       }
     };
@@ -1080,7 +1087,7 @@ var i = Object.freeze({
 }),
     o = "resize scroll".split(" ");
 
-function s(t) {
+function a(t) {
   for (var e = arguments.length, n = new Array(e > 1 ? e - 1 : 0), r = 1; r < e; r++) {
     n[r - 1] = arguments[r];
   }
@@ -1097,159 +1104,160 @@ function s(t) {
 }
 
 [n, r, i, Object.freeze({
+  __proto__: null,
   click: function click() {
     for (var t = arguments.length, e = new Array(t), n = 0; n < t; n++) {
       e[n] = arguments[n];
     }
 
-    return s.bind(this).apply(void 0, ["click"].concat(e));
+    return a.bind(this).apply(void 0, ["click"].concat(e));
   },
   blur: function blur() {
     for (var t = arguments.length, e = new Array(t), n = 0; n < t; n++) {
       e[n] = arguments[n];
     }
 
-    return s.bind(this).apply(void 0, ["blur"].concat(e));
+    return a.bind(this).apply(void 0, ["blur"].concat(e));
   },
   focus: function focus() {
     for (var t = arguments.length, e = new Array(t), n = 0; n < t; n++) {
       e[n] = arguments[n];
     }
 
-    return s.bind(this).apply(void 0, ["focus"].concat(e));
+    return a.bind(this).apply(void 0, ["focus"].concat(e));
   },
   focusin: function focusin() {
     for (var t = arguments.length, e = new Array(t), n = 0; n < t; n++) {
       e[n] = arguments[n];
     }
 
-    return s.bind(this).apply(void 0, ["focusin"].concat(e));
+    return a.bind(this).apply(void 0, ["focusin"].concat(e));
   },
   focusout: function focusout() {
     for (var t = arguments.length, e = new Array(t), n = 0; n < t; n++) {
       e[n] = arguments[n];
     }
 
-    return s.bind(this).apply(void 0, ["focusout"].concat(e));
+    return a.bind(this).apply(void 0, ["focusout"].concat(e));
   },
   keyup: function keyup() {
     for (var t = arguments.length, e = new Array(t), n = 0; n < t; n++) {
       e[n] = arguments[n];
     }
 
-    return s.bind(this).apply(void 0, ["keyup"].concat(e));
+    return a.bind(this).apply(void 0, ["keyup"].concat(e));
   },
   keydown: function keydown() {
     for (var t = arguments.length, e = new Array(t), n = 0; n < t; n++) {
       e[n] = arguments[n];
     }
 
-    return s.bind(this).apply(void 0, ["keydown"].concat(e));
+    return a.bind(this).apply(void 0, ["keydown"].concat(e));
   },
   keypress: function keypress() {
     for (var t = arguments.length, e = new Array(t), n = 0; n < t; n++) {
       e[n] = arguments[n];
     }
 
-    return s.bind(this).apply(void 0, ["keypress"].concat(e));
+    return a.bind(this).apply(void 0, ["keypress"].concat(e));
   },
   submit: function submit() {
     for (var t = arguments.length, e = new Array(t), n = 0; n < t; n++) {
       e[n] = arguments[n];
     }
 
-    return s.bind(this).apply(void 0, ["submit"].concat(e));
+    return a.bind(this).apply(void 0, ["submit"].concat(e));
   },
   change: function change() {
     for (var t = arguments.length, e = new Array(t), n = 0; n < t; n++) {
       e[n] = arguments[n];
     }
 
-    return s.bind(this).apply(void 0, ["change"].concat(e));
+    return a.bind(this).apply(void 0, ["change"].concat(e));
   },
   mousedown: function mousedown() {
     for (var t = arguments.length, e = new Array(t), n = 0; n < t; n++) {
       e[n] = arguments[n];
     }
 
-    return s.bind(this).apply(void 0, ["mousedown"].concat(e));
+    return a.bind(this).apply(void 0, ["mousedown"].concat(e));
   },
   mousemove: function mousemove() {
     for (var t = arguments.length, e = new Array(t), n = 0; n < t; n++) {
       e[n] = arguments[n];
     }
 
-    return s.bind(this).apply(void 0, ["mousemove"].concat(e));
+    return a.bind(this).apply(void 0, ["mousemove"].concat(e));
   },
   mouseup: function mouseup() {
     for (var t = arguments.length, e = new Array(t), n = 0; n < t; n++) {
       e[n] = arguments[n];
     }
 
-    return s.bind(this).apply(void 0, ["mouseup"].concat(e));
+    return a.bind(this).apply(void 0, ["mouseup"].concat(e));
   },
   mouseenter: function mouseenter() {
     for (var t = arguments.length, e = new Array(t), n = 0; n < t; n++) {
       e[n] = arguments[n];
     }
 
-    return s.bind(this).apply(void 0, ["mouseenter"].concat(e));
+    return a.bind(this).apply(void 0, ["mouseenter"].concat(e));
   },
   mouseleave: function mouseleave() {
     for (var t = arguments.length, e = new Array(t), n = 0; n < t; n++) {
       e[n] = arguments[n];
     }
 
-    return s.bind(this).apply(void 0, ["mouseleave"].concat(e));
+    return a.bind(this).apply(void 0, ["mouseleave"].concat(e));
   },
   mouseout: function mouseout() {
     for (var t = arguments.length, e = new Array(t), n = 0; n < t; n++) {
       e[n] = arguments[n];
     }
 
-    return s.bind(this).apply(void 0, ["mouseout"].concat(e));
+    return a.bind(this).apply(void 0, ["mouseout"].concat(e));
   },
   mouseover: function mouseover() {
     for (var t = arguments.length, e = new Array(t), n = 0; n < t; n++) {
       e[n] = arguments[n];
     }
 
-    return s.bind(this).apply(void 0, ["mouseover"].concat(e));
+    return a.bind(this).apply(void 0, ["mouseover"].concat(e));
   },
   touchstart: function touchstart() {
     for (var t = arguments.length, e = new Array(t), n = 0; n < t; n++) {
       e[n] = arguments[n];
     }
 
-    return s.bind(this).apply(void 0, ["touchstart"].concat(e));
+    return a.bind(this).apply(void 0, ["touchstart"].concat(e));
   },
   touchend: function touchend() {
     for (var t = arguments.length, e = new Array(t), n = 0; n < t; n++) {
       e[n] = arguments[n];
     }
 
-    return s.bind(this).apply(void 0, ["touchend"].concat(e));
+    return a.bind(this).apply(void 0, ["touchend"].concat(e));
   },
   touchmove: function touchmove() {
     for (var t = arguments.length, e = new Array(t), n = 0; n < t; n++) {
       e[n] = arguments[n];
     }
 
-    return s.bind(this).apply(void 0, ["touchmove"].concat(e));
+    return a.bind(this).apply(void 0, ["touchmove"].concat(e));
   },
   resize: function resize() {
     for (var t = arguments.length, e = new Array(t), n = 0; n < t; n++) {
       e[n] = arguments[n];
     }
 
-    return s.bind(this).apply(void 0, ["resize"].concat(e));
+    return a.bind(this).apply(void 0, ["resize"].concat(e));
   },
   scroll: function scroll() {
     for (var t = arguments.length, e = new Array(t), n = 0; n < t; n++) {
       e[n] = arguments[n];
     }
 
-    return s.bind(this).apply(void 0, ["scroll"].concat(e));
+    return a.bind(this).apply(void 0, ["scroll"].concat(e));
   }
 })].forEach(function (t) {
   Object.keys(t).forEach(function (e) {
@@ -1259,7 +1267,7 @@ function s(t) {
 });
 
 /*!
-  * wia dom v0.1.2
+  * wia dom v0.1.4
   * (c) 2020 Sibyl Yu
   * @license MIT
   */
@@ -2345,7 +2353,7 @@ function empty() {
   return this;
 }
 /**
- * 是否包含子元素
+ * 是否包含子元�
  */
 
 
@@ -2354,7 +2362,7 @@ function hasChild() {
   return this.dom.children.length > 0;
 }
 /**
- * 第一个子元素节点，不含文本节点
+ * 第一个子元素节点，不含文本节�
  */
 
 
@@ -2385,7 +2393,7 @@ function nextNode() {
   return R;
 }
 /**
- * 最后一个子元素节点，不含文本节点
+ * 最后一个子元素节点，不含文本节�
  */
 
 
@@ -2404,7 +2412,7 @@ function childCount() {
 }
 /**
  * 返回的上级节点名称的元素节点
- * ff parentNode 会返回 空 节点
+ * ff parentNode 会返�?�?节点
  * ff textNode节点 没有 tagName
  */
 
@@ -2526,7 +2534,7 @@ function getCursorPos() {
   return R;
 }
 /**
- * 得到光标的位置
+ * 得到光标的位�
  */
 
 
@@ -2555,7 +2563,7 @@ function setCursorPos(pos) {
   rg.select();
 }
 /**
- * 移到第一行
+ * 移到第一�
  */
 
 
@@ -2566,6 +2574,7 @@ function moveFirst() {
 var Methods =
 /*#__PURE__*/
 Object.freeze({
+  __proto__: null,
   attr: attr,
   removeAttr: removeAttr,
   prop: prop,
@@ -2814,6 +2823,7 @@ function scrollLeft() {
 var Scroll =
 /*#__PURE__*/
 Object.freeze({
+  __proto__: null,
   scrollTo: scrollTo,
   scrollTop: scrollTop,
   scrollLeft: scrollLeft
@@ -3079,6 +3089,7 @@ function getTranslate(axis) {
 var Animate =
 /*#__PURE__*/
 Object.freeze({
+  __proto__: null,
   animate: animate,
   stop: stop,
   getTranslate: getTranslate
@@ -3284,6 +3295,7 @@ function scroll() {
 var eventShortcuts =
 /*#__PURE__*/
 Object.freeze({
+  __proto__: null,
   click: click,
   blur: blur,
   focus: focus,
