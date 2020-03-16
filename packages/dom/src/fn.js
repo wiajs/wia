@@ -201,20 +201,47 @@ function on(...args) {
     }
     listener.apply(this, eventData);
   }
+  // on 函数内共享闭包变�
+  let touchStartX;
+  let touchStartY;
+  function touchStart(ev) {
+    touchStartX = ev.changedTouches[0].clientX;
+    touchStartY = ev.changedTouches[0].clientY;
+  }
+  function touchEnd(ev) {
+    ev.preventDefault();
+    if (
+      Math.abs(ev.changedTouches[0].clientX - touchStartX) <= 10 &&
+      Math.abs(ev.changedTouches[0].clientY - touchStartY) <= 10
+    )
+      handleEvent.apply(this, ev);
+  }
   const events = eventType.split(' ');
   let j;
   for (let i = 0; i < this.length; i += 1) {
     const el = this[i];
     if (!targetSelector) {
       for (j = 0; j < events.length; j += 1) {
-        const event = events[j];
+        let event = events[j];
         if (!el.domListeners) el.domListeners = {};
         if (!el.domListeners[event]) el.domListeners[event] = [];
-        el.domListeners[event].push({
-          listener,
-          proxyListener: handleEvent,
-        });
-        el.addEventListener(event, handleEvent, capture);
+        if (event === 'touch' && !$.touch) event = 'click';
+
+        // 处理touch事件
+        if (event === 'touch' && $.touch) {
+          el.domListeners[event].push({
+            listener,
+            proxyListener: [touchStart, touchEnd],
+          });
+          el.addEventListener('touchstart', touchStart);
+          el.addEventListener('touchend', touchEnd);
+        } else {
+          el.domListeners[event].push({
+            listener,
+            proxyListener: handleEvent,
+          });
+          el.addEventListener(event, handleEvent, capture);
+        }
       }
     } else {
       // Live events
@@ -242,7 +269,8 @@ function off(...args) {
 
   const events = eventType.split(' ');
   for (let i = 0; i < events.length; i += 1) {
-    const event = events[i];
+    let event = events[i];
+    if (event === 'touch' && !$.touch) event = 'click';
     for (let j = 0; j < this.length; j += 1) {
       const el = this[j];
       let handlers;
@@ -253,9 +281,21 @@ function off(...args) {
       }
       if (handlers && handlers.length) {
         for (let k = handlers.length - 1; k >= 0; k -= 1) {
-          const handler = handlers[k];
+          const handler = handlers[k]; // 事件响应对象数组
           if (listener && handler.listener === listener) {
-            el.removeEventListener(event, handler.proxyListener, capture);
+            if (event === 'touch' && $.touch) {
+              el.removeEventListener(
+                'touchstart',
+                handler.proxyListener[0],
+                capture
+              );
+              el.removeEventListener(
+                'touchend',
+                handler.proxyListener[1],
+                capture
+              );
+            } else
+              el.removeEventListener(event, handler.proxyListener, capture);
             handlers.splice(k, 1);
           } else if (
             listener &&

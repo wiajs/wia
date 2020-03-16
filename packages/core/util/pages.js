@@ -21,7 +21,7 @@ async function pages(dir) {
   try {
     dir = dir || process.cwd();
     _src = path.join(dir, './src');
-    _cfg = require(path.join(_src, './config.js'));
+    _cfg = require(path.join(_src, './config/app.js'));
     const rs = [];
     // 获取目标项目目录、子目录下的文件MD5对象
     await getFile(path.join(_src, './page'), rs);
@@ -36,7 +36,7 @@ async function pages(dir) {
         let pk = false; // 是否需重新编译      console.log('pages', {js: f.R.JS});
 
         // eslint-disable-next-line
-        for (let pf of _cfg.app.file) {
+        for (let pf of _cfg.file) {
           // eslint-disable-line
           if (
             (pf.includes('.js') && v === pf) ||
@@ -50,7 +50,7 @@ async function pages(dir) {
         // 排除
         if (pk) {
           // eslint-disable-next-line
-          for (let pf of _cfg.app.exclude) {
+          for (let pf of _cfg.exclude) {
             if (
               (pf.includes('.js') && v === pf) ||
               (!pf.includes('.js') && new RegExp(`^${pf}/`, 'i').test(v))

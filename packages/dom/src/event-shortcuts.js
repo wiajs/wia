@@ -1,10 +1,9 @@
-const noTrigger = ('resize scroll').split(' ');
+const noTrigger = 'resize scroll'.split(' ');
 function eventShortcut(name, ...args) {
   if (typeof args[0] === 'undefined') {
     for (let i = 0; i < this.length; i += 1) {
       if (noTrigger.indexOf(name) < 0) {
-        if (name in this[i])
-          this[i][name]();
+        if (name in this[i]) this[i][name]();
         else {
           $(this[i]).trigger(name);
         }
@@ -75,6 +74,9 @@ function touchend(...args) {
 function touchmove(...args) {
   return eventShortcut.bind(this)('touchmove', ...args);
 }
+function touch(...args) {
+  return eventShortcut.bind(this)('touch', ...args);
+}
 function resize(...args) {
   return eventShortcut.bind(this)('resize', ...args);
 }
@@ -103,6 +105,7 @@ export {
   touchstart,
   touchend,
   touchmove,
+  touch,
   resize,
   scroll,
 };

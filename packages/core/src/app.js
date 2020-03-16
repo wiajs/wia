@@ -78,7 +78,9 @@ class App extends Module {
       language: app.params.language,
       // Root
       root: $rootEl,
-      cfg: app.params.cfg, // confg 配置
+      cfg: app.params.cfg, // app config
+			api: app.params.api, // api config
+			
       // RTL
       rtl: $rootEl.css('direction') === 'rtl',
       // Theme
@@ -99,6 +101,24 @@ class App extends Module {
     if (app.root && app.root[0]) {
       app.root[0].wia = app;
     }
+
+    app.touchEvents = {
+      start: Support.touch
+        ? 'touchstart'
+        : Support.pointerEvents
+        ? 'pointerdown'
+        : 'mousedown',
+      move: Support.touch
+        ? 'touchmove'
+        : Support.pointerEvents
+        ? 'pointermove'
+        : 'mousemove',
+      end: Support.touch
+        ? 'touchend'
+        : Support.pointerEvents
+        ? 'pointerup'
+        : 'mouseup',
+    };
 
     // 加载use插入的模块类相关方法，Load Use Modules
     app.useModules();

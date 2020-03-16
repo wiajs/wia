@@ -54,7 +54,7 @@ class D {
   static isD(d) {
     return d instanceof D;
   }
-	
+
   // Classes and attributes
   addClass(className) {
     if (typeof className === 'undefined') {
@@ -86,13 +86,13 @@ class D {
     }
     return this;
   }
-	
+
   hasClass(name) {
-		return emptyArray.some.call(this, function(el){
-			return el.classList.contains(name);
+    return emptyArray.some.call(this, function(el) {
+      return el.classList.contains(name);
     });
   }
-	
+
   toggleClass(className) {
     const classes = className.split(' ');
     for (let i = 0; i < classes.length; i += 1) {
@@ -400,38 +400,35 @@ $.merge = function(...args) {
   });
   return to;
 };
+$.touch = function() {
+  return !!(
+    window.navigator.maxTouchPoints > 0 ||
+    'ontouchstart' in window ||
+    (window.DocumentTouch && document instanceof window.DocumentTouch)
+  );
+};
 $.fastLink = function() {
   // a 标签加载 touchstart 事件,避免 300毫秒等待
   try {
+    if (!$.touch) return;
     const links = $.qus('a');
     links.forEach(link => {
-      if (
-        link.href &&
-        (link.hasAttribute('fastlink') || link.hasAttribute('fastLink'))
-      ) {
-        //!$.has(link, 'no-fast')) {
-        var touchStartY;
-        link.ontouchstart = e => {
-          touchStartY = e.changedTouches[0].clientY;
-          /*
-					ev.preventDefault();
-					if (!ev.touches.length)
-						return;
-					if ($.hasClass(link, 'back'))
-						return history.back();
-					location.href = link.href;
-*/
+      if (link.hasAttribute('fastlink') || link.hasAttribute('fastLink')) {
+        let startX;
+        let startY;
+        link.ontouchstart = ev => {
+          startX = ev.changedTouches[0].clientX;
+          startY = ev.changedTouches[0].clientY;
         };
-        link.ontouchend = e => {
-          if (Math.abs(e.changedTouches[0].clientY - touchStartY) > 10) return;
-
-          e.preventDefault();
-          /*
-					if (!e.touches.length)
-						return;
-*/
-          if ($(link).hasClass('back')) return history.back();
-          location.href = link.href;
+        link.ontouchend = ev => {
+          if (
+            Math.abs(ev.changedTouches[0].clientX - startX) <= 10 &&
+            Math.abs(ev.changedTouches[0].clientY - startY) <= 10
+          ) {
+            ev.preventDefault();
+            if ($(link).hasClass('back')) return window.history.back();
+            if (link.href) window.location.href = link.href;
+          }
         };
       }
     });
@@ -454,20 +451,20 @@ $.cancelAnimationFrame = function(id) {
     return window.webkitCancelAnimationFrame(id);
   return window.clearTimeout(id);
 };
-$.deleteProps = function(obj){
-	const object = obj;
+$.deleteProps = function(obj) {
+  const object = obj;
   Object.keys(object).forEach(key => {
-		try {
-			object[key] = null;
-		} catch (e) {
-			// no setter for object
-		}
-		try {
-			delete object[key];
-		} catch (e) {
-			// something got wrong
-		}
-	});
+    try {
+      object[key] = null;
+    } catch (e) {
+      // no setter for object
+    }
+    try {
+      delete object[key];
+    } catch (e) {
+      // something got wrong
+    }
+  });
 };
 
 $.nextTick = function(cb, delay = 0) {
@@ -515,27 +512,27 @@ $.promisify = function(f) {
 };
 
 $.urlParam = function(url) {
-	const query = {};
-	let urlToParse = url || window.location.href;
-	let i;
-	let params;
-	let param;
-	let length;
-	if (typeof urlToParse === 'string' && urlToParse.length) {
+  const query = {};
+  let urlToParse = url || window.location.href;
+  let i;
+  let params;
+  let param;
+  let length;
+  if (typeof urlToParse === 'string' && urlToParse.length) {
     urlToParse =
       urlToParse.indexOf('?') > -1 ? urlToParse.replace(/\S*\?/, '') : '';
-		params = urlToParse.split('&').filter(paramsPart => paramsPart !== '');
-		length = params.length;
+    params = urlToParse.split('&').filter(paramsPart => paramsPart !== '');
+    length = params.length;
 
-		for (i = 0; i < length; i += 1) {
-			param = params[i].replace(/#\S+/g, '').split('=');
-			query[decodeURIComponent(param[0])] =
-				typeof param[1] === 'undefined'
-					? undefined
-					: decodeURIComponent(param.slice(1).join('=')) || '';
-		}
-	}
-	return query;
+    for (i = 0; i < length; i += 1) {
+      param = params[i].replace(/#\S+/g, '').split('=');
+      query[decodeURIComponent(param[0])] =
+        typeof param[1] === 'undefined'
+          ? undefined
+          : decodeURIComponent(param.slice(1).join('=')) || '';
+    }
+  }
+  return query;
 };
 
 $.ready = document.ready;

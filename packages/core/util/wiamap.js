@@ -33,9 +33,9 @@ async function map(dir, act) {
   try {
     dir = dir || process.cwd(); // 默认指向运行目录
     _src = path.join(dir, './src');
-    _cfg = require(path.join(_src, './config.js')); // eslint-disable-line
+    _cfg = require(path.join(_src, './config/app.js')); // eslint-disable-line
 
-    const {ver} = _cfg.app;
+    const {ver} = _cfg;
     // const rs = await getFiles(dir, ver); // 获得该项目所有文件，变化的文件放入f.R 中
     // 获取上次自动上传文件清单
     const file = path.resolve(dir, './wiamap.yml');
@@ -85,7 +85,7 @@ function js(rs) {
       // eslint-disable-line
       let pk = false; // 是否需重新编译      console.log('pages', {js: f.R.JS});
 
-      for (let pf of _cfg.app.file) {
+      for (let pf of _cfg.file) {
         // eslint-disable-line
         if (
           (pf.includes('.js') && v === pf) ||
@@ -98,7 +98,7 @@ function js(rs) {
 
       // 排除
       if (pk) {
-        for (let pf of _cfg.app.exclude) {
+        for (let pf of _cfg.exclude) {
           // eslint-disable-line
           if (
             (pf.includes('.js') && v === pf) ||
@@ -176,7 +176,7 @@ async function addVer(prj, rf, ver) {
 
   try {
     // 参数配置文件
-    const f = path.join(__dirname, `/src/${prj}/config.js`);
+    const f = path.join(__dirname, '/src/config/app.js');
     const rv = /(\d*)\.(\d*)\.(\d+)/.exec(ver);
     const nv = (rv && `${rv[1]}.${rv[2]}.${parseInt(rv[3], 10) + 1}`) || '';
     if (nv) {
@@ -292,9 +292,9 @@ async function getFile(dir, rs, act) {
       // eslint-disable-line
       let pk = true;
       // 排除根目录
-      if (dir === _src && _cfg.app.exclude) {
-        for (let j = 0, jlen = _cfg.app.exclude.length; j < jlen; j++) {
-          const pf = _cfg.app.exclude[j];
+      if (dir === _src && _cfg.exclude) {
+        for (let j = 0, jlen = _cfg.exclude.length; j < jlen; j++) {
+          const pf = _cfg.exclude[j];
           // eslint-disable-line
           if (!pf.includes('.js') && new RegExp(`^${pf}$`, 'i').test(d)) {
             pk = false;
