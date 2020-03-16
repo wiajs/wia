@@ -1,5 +1,5 @@
 /*!
-  * wia dom v0.1.5
+  * wia dom v0.1.6
   * (c) 2020 Sibyl Yu
   * @license MIT
   */
@@ -253,6 +253,20 @@
       }
 
       listener.apply(this, eventData);
+    } // on 函数内共享闭包变�
+
+
+    var touchStartX;
+    var touchStartY;
+
+    function touchStart(ev) {
+      touchStartX = ev.changedTouches[0].clientX;
+      touchStartY = ev.changedTouches[0].clientY;
+    }
+
+    function touchEnd(ev) {
+      ev.preventDefault();
+      if (Math.abs(ev.changedTouches[0].clientX - touchStartX) <= 10 && Math.abs(ev.changedTouches[0].clientY - touchStartY) <= 10) handleEvent.apply(this, ev);
     }
 
     var events = eventType.split(' ');
@@ -266,13 +280,24 @@
           var _event = events[j];
           if (!el.domListeners) el.domListeners = {};
           if (!el.domListeners[_event]) el.domListeners[_event] = [];
+          if (_event === 'touch' && !$.touch) _event = 'click'; // 处理touch事件
 
-          el.domListeners[_event].push({
-            listener: listener,
-            proxyListener: handleEvent
-          });
+          if (_event === 'touch' && $.touch) {
+            el.domListeners[_event].push({
+              listener: listener,
+              proxyListener: [touchStart, touchEnd]
+            });
 
-          el.addEventListener(_event, handleEvent, capture);
+            el.addEventListener('touchstart', touchStart);
+            el.addEventListener('touchend', touchEnd);
+          } else {
+            el.domListeners[_event].push({
+              listener: listener,
+              proxyListener: handleEvent
+            });
+
+            el.addEventListener(_event, handleEvent, capture);
+          }
         }
       } else {
         // Live events
@@ -316,6 +341,7 @@
 
     for (var i = 0; i < events.length; i += 1) {
       var _event3 = events[i];
+      if (_event3 === 'touch' && !$.touch) _event3 = 'click';
 
       for (var j = 0; j < this.length; j += 1) {
         var el = this[j];
@@ -329,10 +355,14 @@
 
         if (handlers && handlers.length) {
           for (var k = handlers.length - 1; k >= 0; k -= 1) {
-            var handler = handlers[k];
+            var handler = handlers[k]; // 事件响应对象数组
 
             if (listener && handler.listener === listener) {
-              el.removeEventListener(_event3, handler.proxyListener, capture);
+              if (_event3 === 'touch' && $.touch) {
+                el.removeEventListener('touchstart', handler.proxyListener[0], capture);
+                el.removeEventListener('touchend', handler.proxyListener[1], capture);
+              } else el.removeEventListener(_event3, handler.proxyListener, capture);
+
               handlers.splice(k, 1);
             } else if (listener && handler.listener && handler.listener.domproxy && handler.listener.domproxy === listener) {
               el.removeEventListener(_event3, handler.proxyListener, capture);
@@ -2008,17 +2038,25 @@
     return eventShortcut.bind(this).apply(void 0, ['touchmove'].concat(args));
   }
 
-  function resize() {
+  function touch() {
     for (var _len22 = arguments.length, args = new Array(_len22), _key22 = 0; _key22 < _len22; _key22++) {
       args[_key22] = arguments[_key22];
+    }
+
+    return eventShortcut.bind(this).apply(void 0, ['touch'].concat(args));
+  }
+
+  function resize() {
+    for (var _len23 = arguments.length, args = new Array(_len23), _key23 = 0; _key23 < _len23; _key23++) {
+      args[_key23] = arguments[_key23];
     }
 
     return eventShortcut.bind(this).apply(void 0, ['resize'].concat(args));
   }
 
   function scroll() {
-    for (var _len23 = arguments.length, args = new Array(_len23), _key23 = 0; _key23 < _len23; _key23++) {
-      args[_key23] = arguments[_key23];
+    for (var _len24 = arguments.length, args = new Array(_len24), _key24 = 0; _key24 < _len24; _key24++) {
+      args[_key24] = arguments[_key24];
     }
 
     return eventShortcut.bind(this).apply(void 0, ['scroll'].concat(args));
@@ -2046,6 +2084,7 @@
     touchstart: touchstart,
     touchend: touchend,
     touchmove: touchmove,
+    touch: touch,
     resize: resize,
     scroll: scroll
   });

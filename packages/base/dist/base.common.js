@@ -1,5 +1,5 @@
 /*!
-  * wia base v0.1.5
+  * wia base v0.1.6
   * (c) 2020 Sibyl Yu
   * @license MIT
   */
@@ -393,37 +393,31 @@ $$1.merge = function () {
   return to;
 };
 
+$$1.touch = function () {
+  return !!(window.navigator.maxTouchPoints > 0 || 'ontouchstart' in window || window.DocumentTouch && document instanceof window.DocumentTouch);
+};
+
 $$1.fastLink = function () {
   // a 标签加载 touchstart 事件,避免 300毫秒等待
   try {
+    if (!$$1.touch) return;
     var links = $$1.qus('a');
     links.forEach(function (link) {
-      if (link.href && (link.hasAttribute('fastlink') || link.hasAttribute('fastLink'))) {
-        //!$.has(link, 'no-fast')) {
-        var touchStartY;
+      if (link.hasAttribute('fastlink') || link.hasAttribute('fastLink')) {
+        var startX;
+        var startY;
 
-        link.ontouchstart = function (e) {
-          touchStartY = e.changedTouches[0].clientY;
-          /*
-          ev.preventDefault();
-          if (!ev.touches.length)
-          return;
-          if ($.hasClass(link, 'back'))
-          return history.back();
-          location.href = link.href;
-          */
+        link.ontouchstart = function (ev) {
+          startX = ev.changedTouches[0].clientX;
+          startY = ev.changedTouches[0].clientY;
         };
 
-        link.ontouchend = function (e) {
-          if (Math.abs(e.changedTouches[0].clientY - touchStartY) > 10) return;
-          e.preventDefault();
-          /*
-          if (!e.touches.length)
-          return;
-          */
-
-          if ($$1(link).hasClass('back')) return history.back();
-          location.href = link.href;
+        link.ontouchend = function (ev) {
+          if (Math.abs(ev.changedTouches[0].clientX - startX) <= 10 && Math.abs(ev.changedTouches[0].clientY - startY) <= 10) {
+            ev.preventDefault();
+            if ($$1(link).hasClass('back')) return window.history.back();
+            if (link.href) window.location.href = link.href;
+          }
         };
       }
     });
@@ -569,7 +563,7 @@ $$1.document = document;
 // 一个包中所有引用共享该变量!
 var events = {};
 /**
- * 响应事件函数登记，一个函数只能登记一次
+ * 响应事件函数登记，一个函数，在同一事件下只能登记一次，避免同一事件多次触发相同函数，被误判为多次事件
  * 事件触发时，调用一次
  * @param {*} event
  * @param {*} fn
@@ -582,6 +576,8 @@ function on(event, fn) {
 }
 /**
  * 只触发一次，触发后删除登记的回调函数
+ * 由于需标识执行一次的函数，不对原fn做任何修改，
+ * 因此需包装一个新的回调函数，将原函数作为包装函数变量。
  * @param {*} event
  * @param {*} fn
  */

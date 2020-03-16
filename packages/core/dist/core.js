@@ -1,5 +1,5 @@
 /*!
-  * wia core v0.1.5
+  * wia core v0.1.6
   * (c) 2020 Sibyl Yu
   * @license MIT
   */
@@ -1269,7 +1269,7 @@
   });
 
   /*!
-    * wia dom v0.1.4
+    * wia dom v0.1.5
     * (c) 2020 Sibyl Yu
     * @license MIT
     */
@@ -4547,7 +4547,9 @@
         // Root
         root: $rootEl,
         cfg: app.params.cfg,
-        // confg 配置
+        // app config
+        api: app.params.api,
+        // api config
         // RTL
         rtl: $rootEl.css('direction') === 'rtl',
         // Theme
@@ -4567,8 +4569,13 @@
 
       if (app.root && app.root[0]) {
         app.root[0].wia = app;
-      } // 加载use插入的模块类相关方法，Load Use Modules
+      }
 
+      app.touchEvents = {
+        start: Support.touch ? 'touchstart' : Support.pointerEvents ? 'pointerdown' : 'mousedown',
+        move: Support.touch ? 'touchmove' : Support.pointerEvents ? 'pointermove' : 'mousemove',
+        end: Support.touch ? 'touchend' : Support.pointerEvents ? 'pointerup' : 'mouseup'
+      }; // 加载use插入的模块类相关方法，Load Use Modules
 
       app.useModules(); // 初始化数据，Init Data & Methods
 
