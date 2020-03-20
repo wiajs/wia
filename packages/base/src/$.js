@@ -426,7 +426,7 @@ $.fastLink = function() {
             Math.abs(ev.changedTouches[0].clientY - startY) <= 10
           ) {
             ev.preventDefault();
-            if ($(link).hasClass('back')) return window.history.back();
+            if (link.hasAttribute('back')) return window.history.back();
             if (link.href) window.location.href = link.href;
           }
         };

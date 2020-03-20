@@ -1,5 +1,5 @@
 /*!
-  * wia dom v0.1.6
+  * wia dom v0.1.7
   * (c) 2020 Sibyl Yu
   * @license MIT
   */

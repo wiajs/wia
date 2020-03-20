@@ -1,5 +1,5 @@
 /*!
-  * wia base v0.1.6
+  * wia base v0.1.7
   * (c) 2020 Sibyl Yu
   * @license MIT
   */
@@ -419,7 +419,7 @@
           link.ontouchend = function (ev) {
             if (Math.abs(ev.changedTouches[0].clientX - startX) <= 10 && Math.abs(ev.changedTouches[0].clientY - startY) <= 10) {
               ev.preventDefault();
-              if ($$1(link).hasClass('back')) return window.history.back();
+              if (link.hasAttribute('back')) return window.history.back();
               if (link.href) window.location.href = link.href;
             }
           };

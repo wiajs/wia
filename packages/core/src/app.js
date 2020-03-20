@@ -1,7 +1,9 @@
 /**
  * Wia App 基类，从 Module 和 Event 继承。
  */
-import $ from '@wiajs/dom'; // 必选，dom操作库
+// 使用 rollup打包注意
+// import $ from '@wiajs/dom'; // dom操作库，这种引用，导致 dom的压缩、非压缩 common包都会打入 core
+// const $ = require('@wiajs/dom'); // dom操作库，这种引用，导致 dom的压缩、非压缩 common包都不会打入 core，保留了 require
 
 import Support from './support';
 import Device from './device';
