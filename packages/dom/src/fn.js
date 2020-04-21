@@ -2,6 +2,20 @@ const {Dom} = $;
 
 const emptyArray = [];
 
+function ready(cb) {
+  if (/complete|loaded|interactive/.test(document.readyState) && document.body)
+    cb($);
+  else
+    document.addEventListener(
+      'DOMContentLoaded',
+      function () {
+        cb($);
+      },
+      false
+    );
+  return this;
+}
+
 function attr(attrs, value) {
   if (arguments.length === 1 && typeof attrs === 'string') {
     // Get attr
@@ -32,6 +46,13 @@ function removeAttr(attr) {
   }
   return this;
 }
+
+function hasAttr(attr) {
+  return emptyArray.some.call(this, function (el) {
+    return el.hasAttribute(attr);
+  });
+}
+
 // eslint-disable-next-line
 function prop(props, value) {
   if (arguments.length === 1 && typeof props === 'string') {
@@ -194,6 +215,8 @@ function on(...args) {
       }
     }
   }
+
+  // 事件响应，参数为 domEventData，而不是dom事件中的 event
   function handleEvent(e) {
     const eventData = e && e.target ? e.target.domEventData || [] : [];
     if (eventData.indexOf(e) < 0) {
@@ -201,21 +224,50 @@ function on(...args) {
     }
     listener.apply(this, eventData);
   }
+
+  // Prevent duplicate clicks
+  // click事件响应，参数为 domEventData，而不是dom事件中的 event
+  function clickEvent(e) {
+    // disabled not trigger event
+    if (this.hasAttribute('disabled')) {
+      e.stopPropagation();
+      return false;
+    }
+
+    // Prevent duplicate clicks
+    this.setAttribute('disabled', 'true');
+    setTimeout(() => {
+      try {
+        this.removeAttribute('disabled');
+      } catch (ex) {
+        console.log('clickEvent ', {ex: ex.message});
+      }
+    }, 500); // wait 500 ms, can click again
+
+    const eventData = e && e.target ? e.target.domEventData || [] : [];
+    if (eventData.indexOf(e) < 0) {
+      eventData.unshift(e);
+    }
+    listener.apply(this, eventData);
+  }
+
   // on 函数内共享闭包变�
   let touchStartX;
   let touchStartY;
   function touchStart(ev) {
+    // ev.preventDefault();
     touchStartX = ev.changedTouches[0].clientX;
     touchStartY = ev.changedTouches[0].clientY;
   }
+
   function touchEnd(ev) {
-    ev.preventDefault();
-    if (
-      Math.abs(ev.changedTouches[0].clientX - touchStartX) <= 10 &&
-      Math.abs(ev.changedTouches[0].clientY - touchStartY) <= 10
-    )
-      handleEvent.apply(this, ev);
+    ev.preventDefault(); // 阻止后续�?click 事件触发
+    const x = Math.abs(ev.changedTouches[0].clientX - touchStartX);
+    const y = Math.abs(ev.changedTouches[0].clientY - touchStartY);
+    // console.log('dom touchEnd', {x, y});
+    if (x <= 5 && y <= 5) return clickEvent.call(this, ev);
   }
+
   const events = eventType.split(' ');
   let j;
   for (let i = 0; i < this.length; i += 1) {
@@ -225,16 +277,21 @@ function on(...args) {
         let event = events[j];
         if (!el.domListeners) el.domListeners = {};
         if (!el.domListeners[event]) el.domListeners[event] = [];
-        if (event === 'touch' && !$.touch) event = 'click';
 
-        // 处理touch事件
-        if (event === 'touch' && $.touch) {
+        // click 300ms late，use touch Trigger immediately
+        if (event === 'click' && $.support.touch) {
           el.domListeners[event].push({
             listener,
             proxyListener: [touchStart, touchEnd],
           });
-          el.addEventListener('touchstart', touchStart);
-          el.addEventListener('touchend', touchEnd);
+          el.addEventListener('touchstart', touchStart, capture);
+          el.addEventListener('touchend', touchEnd, capture);
+        } else if (event === 'click') {
+          el.domListeners[event].push({
+            listener,
+            proxyListener: clickEvent,
+          });
+          el.addEventListener(event, clickEvent, capture);
         } else {
           el.domListeners[event].push({
             listener,
@@ -259,6 +316,7 @@ function on(...args) {
   }
   return this;
 }
+
 function off(...args) {
   let [eventType, targetSelector, listener, capture] = args;
   if (typeof args[1] === 'function') {
@@ -270,7 +328,6 @@ function off(...args) {
   const events = eventType.split(' ');
   for (let i = 0; i < events.length; i += 1) {
     let event = events[i];
-    if (event === 'touch' && !$.touch) event = 'click';
     for (let j = 0; j < this.length; j += 1) {
       const el = this[j];
       let handlers;
@@ -283,7 +340,7 @@ function off(...args) {
         for (let k = handlers.length - 1; k >= 0; k -= 1) {
           const handler = handlers[k]; // 事件响应对象数组
           if (listener && handler.listener === listener) {
-            if (event === 'touch' && $.touch) {
+            if (event === 'click' && $.support.touch) {
               el.removeEventListener(
                 'touchstart',
                 handler.proxyListener[0],
@@ -621,6 +678,10 @@ function text(text) {
   }
   return this;
 }
+
+/**
+ * 查看选择的元素是否匹配选择�
+ */
 function is(selector) {
   const el = this[0];
   let compareWith;
@@ -668,7 +729,11 @@ function index() {
   }
   return undefined;
 }
-// eslint-disable-next-line
+
+/**
+ * 返回指定索引dom元素的Dom对象
+ * @param {*} index
+ */
 function eq(index) {
   if (typeof index === 'undefined') return this;
   const length = this.length;
@@ -829,6 +894,10 @@ function prevAll(selector) {
 function siblings(selector) {
   return this.nextAll(selector).add(this.prevAll(selector));
 }
+
+/**
+ * 所有符合条件的父元�
+ */
 function parent(selector) {
   const parents = []; // eslint-disable-line
   for (let i = 0; i < this.length; i += 1) {
@@ -843,6 +912,10 @@ function parent(selector) {
   }
   return $($.uniq(parents));
 }
+
+/**
+ * 从当前元素的父元素开始沿 DOM 树向�?获得匹配选择器的所有祖先元素�
+ */
 function parents(selector) {
   const parents = []; // eslint-disable-line
   for (let i = 0; i < this.length; i += 1) {
@@ -858,6 +931,10 @@ function parents(selector) {
   }
   return $($.uniq(parents));
 }
+
+/**
+ * 从当前元素开始沿 DOM 树向�?获得匹配选择器的第一个祖先元素�
+ */
 function closest(selector) {
   let closest = this; // eslint-disable-line
   if (typeof selector === 'undefined') {
@@ -868,6 +945,11 @@ function closest(selector) {
   }
   return closest;
 }
+
+/**
+ * 后代中所有适合选择器的元素
+ * @param {*} selector
+ */
 function find(selector) {
   const foundElements = [];
   for (let i = 0; i < this.length; i += 1) {
@@ -878,6 +960,11 @@ function find(selector) {
   }
   return new Dom(foundElements);
 }
+
+/**
+ * 返回被选元素的所有直接子元素，不包括文本节点
+ * @param {*} selector
+ */
 function children(selector) {
   const children = []; // eslint-disable-line
   for (let i = 0; i < this.length; i += 1) {
@@ -896,6 +983,7 @@ function children(selector) {
   }
   return new Dom($.uniq(children));
 }
+
 function remove() {
   for (let i = 0; i < this.length; i += 1) {
     if (this[i].parentNode) this[i].parentNode.removeChild(this[i]);
@@ -905,6 +993,7 @@ function remove() {
 function detach() {
   return this.remove();
 }
+
 function add(...args) {
   const dom = this;
   let i;
@@ -918,6 +1007,7 @@ function add(...args) {
   }
   return dom;
 }
+
 function empty() {
   for (let i = 0; i < this.length; i += 1) {
     const el = this[i];
@@ -934,7 +1024,7 @@ function empty() {
 }
 
 /**
- * 是否包含子元�
+ * 是否包含子元素，不含文本节点
  */
 function hasChild() {
   if (!this.dom) return false;
@@ -950,7 +1040,7 @@ function firstChild() {
 }
 
 /**
- * 下一个子元素节点，不含或文本节点
+ * 下一个元素节点，不含文本节点
  */
 function nextNode() {
   let R = null;
@@ -985,22 +1075,19 @@ function childCount() {
 }
 
 /**
- * 返回的上级节点名称的元素节点
+ * 返回的上级节点名称的元素节点，可用closest替代
  * ff parentNode 会返�?�?节点
  * ff textNode节点 没有 tagName
  */
-function upperTag(tag, len = 10) {
+function upperTag(tag) {
   let RC = null;
 
   if (!this.dom) return null;
 
   const tg = tag.toUpperCase();
 
-  let i = 0;
   let nd = this.dom;
   while (nd) {
-    i++;
-    if (i >= len) break;
     if (nd.tagName && nd.tagName.toUpperCase() === tg) {
       RC = nd;
       break;
@@ -1011,7 +1098,7 @@ function upperTag(tag, len = 10) {
 }
 
 /**
- * 获取 指定 tagName的子元素
+ * 获取 指定 tagName的直接子元素，不含文本节点，可用 child替代
  * @param tag
  * @returns {*}
  */
@@ -1035,6 +1122,7 @@ function childTag(tag) {
 
   return RC;
 }
+
 /**
  * 光标放入尾部
  * @param el
@@ -1136,8 +1224,86 @@ function moveFirst() {
   this.rowindex = 0;
 }
 
+/**
+ * querySelector
+ * return only first
+ */
+function qu(sel) {
+  return $(this.dom?.querySelector(sel));
+}
+
+function qus(sel) {
+  return $(sel, this.dom);
+}
+
+/**
+ * querySelector name
+ * return only first
+ */
+function qn(name) {
+  return $(this.dom?.querySelector(`[name=${name}]`));
+}
+
+function qns(name) {
+  return $(`[name=${name}]`, this.dom);
+}
+
+/**
+ * querySelector attribute
+ * return only first
+ */
+function qa(name, v) {
+  return $(this.dom?.querySelector(`[${name}=${v}]`));
+}
+
+function qas(name, v) {
+  return $(`[${name}=${v}]`, this.dom);
+}
+
+/**
+ * querySelector ClassName
+ * cls: 'aaa bbb'
+ * return only first
+ */
+function qc(cls) {
+  let R = this.dom?.getElementsByClassName(cls);
+  if (R) R = R[0];
+
+  return $(R);
+}
+
+function qcs(cls) {
+  let R = this.dom?.getElementsByClassName(cls);
+  if (R && R.length > 0) R = [].slice.call(R);
+  else return (R = []);
+
+  return new Dom(R);
+}
+
+/**
+ * querySelector TagName
+ * tag: 'div'
+ * return only first
+ */
+function qt(tag) {
+  let R = this.dom?.getElementsByTagName(tag);
+  if (R) R = R[0];
+
+  return $(R);
+}
+
+function qts(tag) {
+  let R = this.dom?.getElementsByTagName(tag);
+  if (R && R.length > 0) R = [].slice.call(R);
+  else return (R = []);
+
+  return new Dom(R);
+}
+
 export {
+  ready,
   attr,
+  hasAttr,
   removeAttr,
   prop,
   data,
@@ -1186,6 +1352,20 @@ export {
   parent,
   parents,
   closest,
+  qu,
+  qn,
+  qn as name,
+  qa,
+  qt,
+  qt as tag,
+  qc,
+  qus,
+  qns,
+  qns as names,
+  qas,
+  qts,
+  qts as tags,
+  qcs,
   find,
   hasChild,
   children,

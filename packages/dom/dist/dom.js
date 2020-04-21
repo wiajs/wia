@@ -1,17 +1,24 @@
 /*!
-  * wia dom v0.1.7
+  * wia dom v0.1.8
   * (c) 2020 Sibyl Yu
   * @license MIT
   */
 (function (global, factory) {
-  typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
-  typeof define === 'function' && define.amd ? define(factory) :
-  (global = global || self, global.$ = factory());
-}(this, function () { 'use strict';
+  typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
+  typeof define === 'function' && define.amd ? define(['exports'], factory) :
+  (global = global || self, factory(global.$ = {}));
+}(this, function (exports) { 'use strict';
 
   var _$ = $,
       Dom = _$.Dom;
   var emptyArray = [];
+
+  function ready(cb) {
+    if (/complete|loaded|interactive/.test(document.readyState) && document.body) cb($);else document.addEventListener('DOMContentLoaded', function () {
+      cb($);
+    }, false);
+    return this;
+  }
 
   function attr(attrs, value) {
     if (arguments.length === 1 && typeof attrs === 'string') {
@@ -45,6 +52,12 @@
     }
 
     return this;
+  }
+
+  function hasAttr(attr) {
+    return emptyArray.some.call(this, function (el) {
+      return el.hasAttribute(attr);
+    });
   } // eslint-disable-next-line
 
 
@@ -243,9 +256,42 @@
           if ($(_parents[k]).is(targetSelector)) listener.apply(_parents[k], eventData);
         }
       }
-    }
+    } // 事件响应，参数为 domEventData，而不是dom事件中的 event
+
 
     function handleEvent(e) {
+      var eventData = e && e.target ? e.target.domEventData || [] : [];
+
+      if (eventData.indexOf(e) < 0) {
+        eventData.unshift(e);
+      }
+
+      listener.apply(this, eventData);
+    } // Prevent duplicate clicks
+    // click事件响应，参数为 domEventData，而不是dom事件中的 event
+
+
+    function clickEvent(e) {
+      var _this = this;
+
+      // disabled not trigger event
+      if (this.hasAttribute('disabled')) {
+        e.stopPropagation();
+        return false;
+      } // Prevent duplicate clicks
+
+
+      this.setAttribute('disabled', 'true');
+      setTimeout(function () {
+        try {
+          _this.removeAttribute('disabled');
+        } catch (ex) {
+          console.log('clickEvent ', {
+            ex: ex.message
+          });
+        }
+      }, 500); // wait 500 ms, can click again
+
       var eventData = e && e.target ? e.target.domEventData || [] : [];
 
       if (eventData.indexOf(e) < 0) {
@@ -260,13 +306,18 @@
     var touchStartY;
 
     function touchStart(ev) {
+      // ev.preventDefault();
       touchStartX = ev.changedTouches[0].clientX;
       touchStartY = ev.changedTouches[0].clientY;
     }
 
     function touchEnd(ev) {
-      ev.preventDefault();
-      if (Math.abs(ev.changedTouches[0].clientX - touchStartX) <= 10 && Math.abs(ev.changedTouches[0].clientY - touchStartY) <= 10) handleEvent.apply(this, ev);
+      ev.preventDefault(); // 阻止后续�?click 事件触发
+
+      var x = Math.abs(ev.changedTouches[0].clientX - touchStartX);
+      var y = Math.abs(ev.changedTouches[0].clientY - touchStartY); // console.log('dom touchEnd', {x, y});
+
+      if (x <= 5 && y <= 5) return clickEvent.call(this, ev);
     }
 
     var events = eventType.split(' ');
@@ -279,17 +330,23 @@
         for (j = 0; j < events.length; j += 1) {
           var _event = events[j];
           if (!el.domListeners) el.domListeners = {};
-          if (!el.domListeners[_event]) el.domListeners[_event] = [];
-          if (_event === 'touch' && !$.touch) _event = 'click'; // 处理touch事件
+          if (!el.domListeners[_event]) el.domListeners[_event] = []; // click 300ms late，use touch Trigger immediately
 
-          if (_event === 'touch' && $.touch) {
+          if (_event === 'click' && $.support.touch) {
             el.domListeners[_event].push({
               listener: listener,
               proxyListener: [touchStart, touchEnd]
             });
 
-            el.addEventListener('touchstart', touchStart);
-            el.addEventListener('touchend', touchEnd);
+            el.addEventListener('touchstart', touchStart, capture);
+            el.addEventListener('touchend', touchEnd, capture);
+          } else if (_event === 'click') {
+            el.domListeners[_event].push({
+              listener: listener,
+              proxyListener: clickEvent
+            });
+
+            el.addEventListener(_event, clickEvent, capture);
           } else {
             el.domListeners[_event].push({
               listener: listener,
@@ -341,7 +398,6 @@
 
     for (var i = 0; i < events.length; i += 1) {
       var _event3 = events[i];
-      if (_event3 === 'touch' && !$.touch) _event3 = 'click';
 
       for (var j = 0; j < this.length; j += 1) {
         var el = this[j];
@@ -358,7 +414,7 @@
             var handler = handlers[k]; // 事件响应对象数组
 
             if (listener && handler.listener === listener) {
-              if (_event3 === 'touch' && $.touch) {
+              if (_event3 === 'click' && $.support.touch) {
                 el.removeEventListener('touchstart', handler.proxyListener[0], capture);
                 el.removeEventListener('touchend', handler.proxyListener[1], capture);
               } else el.removeEventListener(_event3, handler.proxyListener, capture);
@@ -745,6 +801,10 @@
 
     return this;
   }
+  /**
+   * 查看选择的元素是否匹配选择�
+   */
+
 
   function is(selector) {
     var el = this[0];
@@ -799,7 +859,11 @@
     }
 
     return undefined;
-  } // eslint-disable-next-line
+  }
+  /**
+   * 返回指定索引dom元素的Dom对象
+   * @param {*} index
+   */
 
 
   function eq(index) {
@@ -986,6 +1050,10 @@
   function siblings(selector) {
     return this.nextAll(selector).add(this.prevAll(selector));
   }
+  /**
+   * 所有符合条件的父元�
+   */
+
 
   function parent(selector) {
     var parents = []; // eslint-disable-line
@@ -1002,6 +1070,10 @@
 
     return $($.uniq(parents));
   }
+  /**
+   * 从当前元素的父元素开始沿 DOM 树向�?获得匹配选择器的所有祖先元素�
+   */
+
 
   function parents(selector) {
     var parents = []; // eslint-disable-line
@@ -1022,6 +1094,10 @@
 
     return $($.uniq(parents));
   }
+  /**
+   * 从当前元素开始沿 DOM 树向�?获得匹配选择器的第一个祖先元素�
+   */
+
 
   function closest(selector) {
     var closest = this; // eslint-disable-line
@@ -1036,6 +1112,11 @@
 
     return closest;
   }
+  /**
+   * 后代中所有适合选择器的元素
+   * @param {*} selector
+   */
+
 
   function find(selector) {
     var foundElements = [];
@@ -1050,6 +1131,11 @@
 
     return new Dom(foundElements);
   }
+  /**
+   * 返回被选元素的所有直接子元素，不包括文本节点
+   * @param {*} selector
+   */
+
 
   function children(selector) {
     var children = []; // eslint-disable-line
@@ -1120,7 +1206,7 @@
     return this;
   }
   /**
-   * 是否包含子元�
+   * 是否包含子元素，不含文本节点
    */
 
 
@@ -1138,7 +1224,7 @@
     return this.dom.children[0];
   }
   /**
-   * 下一个子元素节点，不含或文本节点
+   * 下一个元素节点，不含文本节点
    */
 
 
@@ -1178,27 +1264,19 @@
     return this.dom.children.length;
   }
   /**
-   * 返回的上级节点名称的元素节点
+   * 返回的上级节点名称的元素节点，可用closest替代
    * ff parentNode 会返�?�?节点
    * ff textNode节点 没有 tagName
    */
 
 
-  function upperTag(tag, len) {
-    if (len === void 0) {
-      len = 10;
-    }
-
+  function upperTag(tag) {
     var RC = null;
     if (!this.dom) return null;
     var tg = tag.toUpperCase();
-    var i = 0;
     var nd = this.dom;
 
     while (nd) {
-      i++;
-      if (i >= len) break;
-
       if (nd.tagName && nd.tagName.toUpperCase() === tg) {
         RC = nd;
         break;
@@ -1210,7 +1288,7 @@
     return RC;
   }
   /**
-   * 获取 指定 tagName的子元素
+   * 获取 指定 tagName的直接子元素，不含文本节点，可用 child替代
    * @param tag
    * @returns {*}
    */
@@ -1337,10 +1415,101 @@
   function moveFirst() {
     this.rowindex = 0;
   }
+  /**
+   * querySelector
+   * return only first
+   */
+
+
+  function qu(sel) {
+    var _this$dom;
+
+    return $((_this$dom = this.dom) === null || _this$dom === void 0 ? void 0 : _this$dom.querySelector(sel));
+  }
+
+  function qus(sel) {
+    return $(sel, this.dom);
+  }
+  /**
+   * querySelector name
+   * return only first
+   */
+
+
+  function qn(name) {
+    var _this$dom2;
+
+    return $((_this$dom2 = this.dom) === null || _this$dom2 === void 0 ? void 0 : _this$dom2.querySelector("[name=" + name + "]"));
+  }
+
+  function qns(name) {
+    return $("[name=" + name + "]", this.dom);
+  }
+  /**
+   * querySelector attribute
+   * return only first
+   */
+
+
+  function qa(name, v) {
+    var _this$dom3;
+
+    return $((_this$dom3 = this.dom) === null || _this$dom3 === void 0 ? void 0 : _this$dom3.querySelector("[" + name + "=" + v + "]"));
+  }
+
+  function qas(name, v) {
+    return $("[" + name + "=" + v + "]", this.dom);
+  }
+  /**
+   * querySelector ClassName
+   * cls: 'aaa bbb'
+   * return only first
+   */
+
+
+  function qc(cls) {
+    var _this$dom4;
+
+    var R = (_this$dom4 = this.dom) === null || _this$dom4 === void 0 ? void 0 : _this$dom4.getElementsByClassName(cls);
+    if (R) R = R[0];
+    return $(R);
+  }
+
+  function qcs(cls) {
+    var _this$dom5;
+
+    var R = (_this$dom5 = this.dom) === null || _this$dom5 === void 0 ? void 0 : _this$dom5.getElementsByClassName(cls);
+    if (R && R.length > 0) R = [].slice.call(R);else return R = [];
+    return new Dom(R);
+  }
+  /**
+   * querySelector TagName
+   * tag: 'div'
+   * return only first
+   */
+
+
+  function qt(tag) {
+    var _this$dom6;
+
+    var R = (_this$dom6 = this.dom) === null || _this$dom6 === void 0 ? void 0 : _this$dom6.getElementsByTagName(tag);
+    if (R) R = R[0];
+    return $(R);
+  }
+
+  function qts(tag) {
+    var _this$dom7;
+
+    var R = (_this$dom7 = this.dom) === null || _this$dom7 === void 0 ? void 0 : _this$dom7.getElementsByTagName(tag);
+    if (R && R.length > 0) R = [].slice.call(R);else return R = [];
+    return new Dom(R);
+  }
 
   var Methods = /*#__PURE__*/Object.freeze({
     __proto__: null,
+    ready: ready,
     attr: attr,
+    hasAttr: hasAttr,
     removeAttr: removeAttr,
     prop: prop,
     data: data,
@@ -1389,6 +1558,20 @@
     parent: parent,
     parents: parents,
     closest: closest,
+    qu: qu,
+    qn: qn,
+    name: qn,
+    qa: qa,
+    qt: qt,
+    tag: qt,
+    qc: qc,
+    qus: qus,
+    qns: qns,
+    names: qns,
+    qas: qas,
+    qts: qts,
+    tags: qts,
+    qcs: qcs,
     find: find,
     hasChild: hasChild,
     children: children,
@@ -2038,25 +2221,17 @@
     return eventShortcut.bind(this).apply(void 0, ['touchmove'].concat(args));
   }
 
-  function touch() {
+  function resize() {
     for (var _len22 = arguments.length, args = new Array(_len22), _key22 = 0; _key22 < _len22; _key22++) {
       args[_key22] = arguments[_key22];
-    }
-
-    return eventShortcut.bind(this).apply(void 0, ['touch'].concat(args));
-  }
-
-  function resize() {
-    for (var _len23 = arguments.length, args = new Array(_len23), _key23 = 0; _key23 < _len23; _key23++) {
-      args[_key23] = arguments[_key23];
     }
 
     return eventShortcut.bind(this).apply(void 0, ['resize'].concat(args));
   }
 
   function scroll() {
-    for (var _len24 = arguments.length, args = new Array(_len24), _key24 = 0; _key24 < _len24; _key24++) {
-      args[_key24] = arguments[_key24];
+    for (var _len23 = arguments.length, args = new Array(_len23), _key23 = 0; _key23 < _len23; _key23++) {
+      args[_key23] = arguments[_key23];
     }
 
     return eventShortcut.bind(this).apply(void 0, ['scroll'].concat(args));
@@ -2084,7 +2259,6 @@
     touchstart: touchstart,
     touchend: touchend,
     touchmove: touchmove,
-    touch: touch,
     resize: resize,
     scroll: scroll
   });
@@ -2093,12 +2267,15 @@
    * 输出方法到 $.fn，用户对 $(dom) 对象操作
    * 相关方法与用法与 zepto、jQuery兼容。
    */
+  var $$1 = window.$;
   [Methods, Scroll, Animate, eventShortcuts].forEach(function (group) {
     Object.keys(group).forEach(function (methodName) {
-      $.fn[methodName] = group[methodName];
+      $$1.fn[methodName] = group[methodName];
     });
-  });
+  }); // export default $; // webpack中import，会导致default不存在访问错误！
 
-  return $;
+  exports.$ = $$1;
+
+  Object.defineProperty(exports, '__esModule', { value: true });
 
 }));

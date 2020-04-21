@@ -8,10 +8,12 @@ import * as Scroll from './scroll';
 import * as Animate from './animate';
 import * as eventShortcuts from './event-shortcuts';
 
+const $ = window.$;
 [Methods, Scroll, Animate, eventShortcuts].forEach((group) => {
   Object.keys(group).forEach((methodName) => {
     $.fn[methodName] = group[methodName];
   });
 });
 
-export default $;
+// export default $; // webpack中import，会导致default不存在访问错误！
+export {$}; 

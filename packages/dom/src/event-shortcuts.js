@@ -74,9 +74,6 @@ function touchend(...args) {
 function touchmove(...args) {
   return eventShortcut.bind(this)('touchmove', ...args);
 }
-function touch(...args) {
-  return eventShortcut.bind(this)('touch', ...args);
-}
 function resize(...args) {
   return eventShortcut.bind(this)('resize', ...args);
 }
@@ -105,7 +102,6 @@ export {
   touchstart,
   touchend,
   touchmove,
-  touch,
   resize,
   scroll,
 };
