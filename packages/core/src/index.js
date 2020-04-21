@@ -1,8 +1,11 @@
 export {default as Ajax} from './ajax';
 export {default as App} from './app';
 export {default as Constructors} from './constructors';
-export {default as Support} from './support';
-export {default as Device} from './device';
+// export {default as Support} from './support';
+// export {default as Device} from './device';
+const Support = $.support;
+const Device = $.device;
+export {Support, Device};
 export {default as Event} from './event';
 export {default as Lazy} from './lazy';
 export {default as loadModule} from './loadModule';

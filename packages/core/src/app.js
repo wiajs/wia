@@ -5,8 +5,6 @@
 // import $ from '@wiajs/dom'; // dom操作库，这种引用，导致 dom的压缩、非压缩 common包都会打入 core
 // const $ = require('@wiajs/dom'); // dom操作库，这种引用，导致 dom的压缩、非压缩 common包都不会打入 core，保留了 require
 
-import Support from './support';
-import Device from './device';
 import Utils from './utils';
 
 import Event from './event';
@@ -17,11 +15,13 @@ import loadModule from './loadModule';
 
 // Core Modules
 import Resize from './resize';
+import Click from './clicks'; // UI组件的点击（Click 或 Touch）事件
+
 // ServiceWorker
 import SW from './sw';
 
-$.support = Support;
-$.device = Device;
+const Support = $.support;
+const Device = $.device;
 
 class App extends Module {
   constructor(params) {
@@ -36,6 +36,9 @@ class App extends Module {
 
     // App Instance
     const app = this;
+    app.device = Device;
+    app.support = Support;
+
     App.instance = app;
     $.app = app;
     $.App = App;
@@ -102,6 +105,11 @@ class App extends Module {
     // Save Root
     if (app.root && app.root[0]) {
       app.root[0].wia = app;
+    }
+
+    if (Device.ios && Device.webView) {
+      // Strange hack required for iOS 8 webview to work on inputs
+      window.addEventListener('touchstart', () => {});
     }
 
     app.touchEvents = {
@@ -386,6 +394,7 @@ App.utils = Utils;
 // 添加应用缺省模块
 App.use([
   Resize, // 控制屏幕大小
+  Click, // 触发UI组件的点击（Click 或 Touch）事件
   SW, // ServiceWorker
 
   //INSTALL_COMPONENTS

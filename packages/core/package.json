@@ -1,6 +1,6 @@
 {
   "name": "@wiajs/core",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "wia app core package. Part of the code is borrowed Framework7.",
   "main": "index.js",
   "types": "dist/core.d.ts",

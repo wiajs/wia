@@ -1,5 +1,5 @@
 /*!
-  * wia core v0.1.7
+  * wia core v0.1.8
   * (c) 2020 Sibyl Yu
   * @license MIT
   */
@@ -171,170 +171,6 @@
 
     return self;
   }
-
-  var Support = function Support() {
-    return {
-      touch: function checkTouch() {
-        return !!(window.navigator.maxTouchPoints > 0 || 'ontouchstart' in window || window.DocumentTouch && document instanceof window.DocumentTouch);
-      }(),
-      pointerEvents: !!window.PointerEvent,
-      observer: function checkObserver() {
-        return 'MutationObserver' in window || 'WebkitMutationObserver' in window;
-      }(),
-      passiveListener: function checkPassiveListener() {
-        var supportsPassive = false;
-
-        try {
-          var opts = Object.defineProperty({}, 'passive', {
-            // eslint-disable-next-line
-            get: function get() {
-              supportsPassive = true;
-            }
-          });
-          window.addEventListener('testPassiveListener', null, opts);
-        } catch (e) {// No support
-        }
-
-        return supportsPassive;
-      }(),
-      gestures: function checkGestures() {
-        return 'ongesturestart' in window;
-      }(),
-      intersectionObserver: function checkObserver() {
-        return 'IntersectionObserver' in window;
-      }()
-    };
-  }();
-
-  var Device = function Device() {
-    var platform = window.navigator.platform;
-    var ua = window.navigator.userAgent;
-    var device = {
-      ios: false,
-      android: false,
-      androidChrome: false,
-      desktop: false,
-      iphone: false,
-      ipod: false,
-      ipad: false,
-      edge: false,
-      ie: false,
-      firefox: false,
-      macos: false,
-      windows: false,
-      cordova: !!(window.cordova || window.phonegap),
-      phonegap: !!(window.cordova || window.phonegap),
-      electron: false
-    };
-    var screenWidth = window.screen.width;
-    var screenHeight = window.screen.height;
-    var android = ua.match(/(Android);?[\s\/]+([\d.]+)?/); // eslint-disable-line
-
-    var ipad = ua.match(/(iPad).*OS\s([\d_]+)/);
-    var ipod = ua.match(/(iPod)(.*OS\s([\d_]+))?/);
-    var iphone = !ipad && ua.match(/(iPhone\sOS|iOS)\s([\d_]+)/);
-    var ie = ua.indexOf('MSIE ') >= 0 || ua.indexOf('Trident/') >= 0;
-    var edge = ua.indexOf('Edge/') >= 0;
-    var firefox = ua.indexOf('Gecko/') >= 0 && ua.indexOf('Firefox/') >= 0;
-    var windows = platform === 'Win32';
-    var electron = ua.toLowerCase().indexOf('electron') >= 0;
-    var macos = platform === 'MacIntel'; // iPadOs 13 fix
-
-    if (!ipad && macos && Support.touch && (screenWidth === 1024 && screenHeight === 1366 || // Pro 12.9
-    screenWidth === 834 && screenHeight === 1194 // Pro 11
-    || screenWidth === 834 && screenHeight === 1112 // Pro 10.5
-    || screenWidth === 768 && screenHeight === 1024 // other
-    )) {
-      ipad = ua.match(/(Version)\/([\d.]+)/);
-      macos = false;
-    }
-
-    device.ie = ie;
-    device.edge = edge;
-    device.firefox = firefox; // Android
-
-    if (android && !windows) {
-      device.os = 'android';
-      device.osVersion = android[2];
-      device.android = true;
-      device.androidChrome = ua.toLowerCase().indexOf('chrome') >= 0;
-    }
-
-    if (ipad || iphone || ipod) {
-      device.os = 'ios';
-      device.ios = true;
-    } // iOS
-
-
-    if (iphone && !ipod) {
-      device.osVersion = iphone[2].replace(/_/g, '.');
-      device.iphone = true;
-    }
-
-    if (ipad) {
-      device.osVersion = ipad[2].replace(/_/g, '.');
-      device.ipad = true;
-    }
-
-    if (ipod) {
-      device.osVersion = ipod[3] ? ipod[3].replace(/_/g, '.') : null;
-      device.ipod = true;
-    } // iOS 8+ changed UA
-
-
-    if (device.ios && device.osVersion && ua.indexOf('Version/') >= 0) {
-      if (device.osVersion.split('.')[0] === '10') {
-        device.osVersion = ua.toLowerCase().split('version/')[1].split(' ')[0];
-      }
-    } // Webview
-
-
-    device.webView = !!((iphone || ipad || ipod) && (ua.match(/.*AppleWebKit(?!.*Safari)/i) || window.navigator.standalone)) || window.matchMedia && window.matchMedia('(display-mode: standalone)').matches;
-    device.webview = device.webView;
-    device.standalone = device.webView; // Desktop
-
-    device.desktop = !(device.ios || device.android) || electron;
-
-    if (device.desktop) {
-      device.electron = electron;
-      device.macos = macos;
-      device.windows = windows;
-
-      if (device.macos) {
-        device.os = 'macos';
-      }
-
-      if (device.windows) {
-        device.os = 'windows';
-      }
-    } // Pixel Ratio
-
-
-    device.pixelRatio = window.devicePixelRatio || 1; // Color Scheme
-
-    var DARK = '(prefers-color-scheme: dark)';
-    var LIGHT = '(prefers-color-scheme: light)';
-
-    device.prefersColorScheme = function prefersColorTheme() {
-      var theme;
-
-      if (window.matchMedia && window.matchMedia(LIGHT).matches) {
-        theme = 'light';
-      }
-
-      if (window.matchMedia && window.matchMedia(DARK).matches) {
-        theme = 'dark';
-      }
-
-      return theme;
-    }; // weixin
-
-
-    device.wechat = /MicroMessenger/i.test(ua);
-    device.weixin = device.wechat; // Export object
-
-    return device;
-  }();
 
   /* eslint no-control-regex: "off" */
   var _uniqueNumber = 1;
@@ -1232,6 +1068,94 @@
     }
   };
 
+  /**
+   * document 绑定click事件
+   * 支持touch则绑定touch，否则绑定click
+   * 无论touch 还是 click事件，都会触发事件响应函数
+   * @param {*} cb
+   */
+  function bindClick(cb) {
+    var touchStartX;
+    var touchStartY;
+
+    function touchStart(ev) {
+      // ev.preventDefault();
+      touchStartX = ev.changedTouches[0].clientX;
+      touchStartY = ev.changedTouches[0].clientY;
+    }
+
+    function touchEnd(ev) {
+      // ev.preventDefault();
+      var x = Math.abs(ev.changedTouches[0].clientX - touchStartX);
+      var y = Math.abs(ev.changedTouches[0].clientY - touchStartY); // console.log('touchEnd', {x, y});
+
+      if (x <= 5 && y <= 5) {
+        cb.call(this, ev);
+      }
+    } // 在捕捉时触发，不影响后续冒泡阶段再次触发
+
+
+    if ($.support.touch) {
+      // console.log('bind touch');
+      document.addEventListener('touchstart', touchStart, true);
+      document.addEventListener('touchend', touchEnd, true);
+    } else {
+      // console.log('bind click');
+      document.addEventListener('click', cb, true);
+    }
+  }
+
+  function initClicks(app) {
+    function appClick(ev) {
+      app.emit({
+        events: 'click',
+        data: [ev]
+      });
+    }
+
+    function handleClicks(e) {
+      var $clickedEl = $(e.target);
+      var $clickedLinkEl = $clickedEl.closest('a');
+      var isLink = $clickedLinkEl.length > 0;
+      var url = isLink && $clickedLinkEl.attr('href'); // call Modules Clicks
+
+      Object.keys(app.modules).forEach(function (moduleName) {
+        var moduleClicks = app.modules[moduleName].clicks;
+        if (!moduleClicks) return;
+        if (e.preventF7Router) return;
+        Object.keys(moduleClicks).forEach(function (clickSelector) {
+          var matchingClickedElement = $clickedEl.closest(clickSelector).eq(0);
+
+          if (matchingClickedElement.length > 0) {
+            moduleClicks[clickSelector].call(app, matchingClickedElement, matchingClickedElement.dataset(), e);
+          }
+        });
+      });
+    } // 绑定click 或 touch 事件，触发时，发射click事件
+
+
+    bindClick(appClick); // click event 响应
+
+    app.on('click', handleClicks);
+  }
+
+  var Click = {
+    name: 'clicks',
+    params: {
+      clicks: {
+        // External Links
+        externalLinks: '.ext'
+      }
+    },
+    on: {
+      // app 创建时被调用
+      init: function init() {
+        var app = this;
+        initClicks(app);
+      }
+    }
+  };
+
   var SW = {
     registrations: [],
     register: function register(path, scope) {
@@ -1319,8 +1243,8 @@
     }
   };
 
-  $.support = Support;
-  $.device = Device;
+  var Support = $.support;
+  var Device = $.device;
 
   var App =
   /*#__PURE__*/
@@ -1340,6 +1264,8 @@
 
       var app = _assertThisInitialized(_this);
 
+      app.device = Device;
+      app.support = Support;
       App.instance = app;
       $.app = app;
       $.App = App; // Default
@@ -1402,6 +1328,11 @@
 
       if (app.root && app.root[0]) {
         app.root[0].wia = app;
+      }
+
+      if (Device.ios && Device.webView) {
+        // Strange hack required for iOS 8 webview to work on inputs
+        window.addEventListener('touchstart', function () {});
       }
 
       app.touchEvents = {
@@ -1679,6 +1610,7 @@
   App.utils = Utils; // 添加应用缺省模块
 
   App.use([Resize, // 控制屏幕大小
+  Click, // 触发UI组件的点击（Click 或 Touch）事件
   SW$1 // ServiceWorker
   //INSTALL_COMPONENTS
   ]);
@@ -1989,10 +1921,15 @@
     return Page;
   }();
 
+  // export {default as Device} from './device';
+
+  var Support$1 = $.support;
+  var Device$1 = $.device;
+
   exports.Ajax = Ajax;
   exports.App = App;
   exports.Constructors = Constructors;
-  exports.Device = Device;
+  exports.Device = Device$1;
   exports.Event = Event;
   exports.Lazy = Lazy;
   exports.Modals = Modals;
@@ -2000,7 +1937,7 @@
   exports.Page = Page;
   exports.Resize = Resize;
   exports.SW = SW$1;
-  exports.Support = Support;
+  exports.Support = Support$1;
   exports.Utils = Utils;
   exports.loadModule = loadModule;
 
