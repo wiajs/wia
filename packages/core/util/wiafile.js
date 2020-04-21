@@ -1,6 +1,6 @@
 /* eslint-disable import/no-extraneous-dependencies */
 /**
- * 自动根据src目录文件生成 wiamap.yml 文件映射
+ * 自动根据src、dist目录文件生成 wiafile.yml 文件映射
  */
 const _ = require('lodash');
 const path = require('path');
@@ -23,50 +23,67 @@ function promisify(f) {
 }
 
 /**
- * 获取文件map，保存到 wiamap.json 文件，返回 update。
+ * 获取wia文件，保存到 wiafile.yml 文件，返回 update，便于编译或者发布。
  * @param {*} dir 文件map路径
- * @param {*} act build or pub
+ * @param {*} act build or pub，build 时，读取src，pub时，读取 dist
  */
-async function map(dir, act) {
+async function make(dir, act = 'build') {
   let R = {};
 
   try {
     dir = dir || process.cwd(); // 默认指向运行目录
-    _src = path.join(dir, './src');
-    _cfg = require(path.join(_src, './config/app.js')); // eslint-disable-line
+    _src = act === 'pub' ? path.join(dir, './dist') : path.join(dir, './src');
+    _cfg = require(path.join(dir, './wiaconfig.js')); // eslint-disable-line
 
     const {ver} = _cfg;
     // const rs = await getFiles(dir, ver); // 获得该项目所有文件，变化的文件放入f.R 中
     // 获取上次自动上传文件清单
-    const file = path.resolve(dir, './wiamap.yml');
+    const f = path.resolve(dir, './wiafile.yml');
     let rs = {};
     let r = {};
-    if (fs.existsSync(file)) r = yaml.safeLoad(fs.readFileSync(file, 'utf8')); // eslint-disable-line
+    if (fs.existsSync(f)) r = yaml.safeLoad(fs.readFileSync(f, 'utf8')); // eslint-disable-line
     // r = yaml.safeLoad(fs.readFileSync(file, 'utf8'));
     // if (checkVer(r, ver))
     //   rs = {};
     let skip = false;
     if (r) {
-      if ((r.building && act === 'build') || (r.pubing && act === 'pub'))
+      if (r.pub && r.pub.pubing && act === 'pub') {
+        R = r.pub.update || {};
+        skip = true;
+      } else if (r.local && r.local.building && act === 'build')
         skip = true;
 
+      // 重新扫描文件，去掉之前的 update
       if (!skip) {
-        const {update: x, last: y, ...z} = r;
-        rs = z;
+        if (act === 'build') {
+          if (r.local) {
+            delete r.local.update;
+            rs = r.local;
+          }
+        } else if (act === 'pub') {
+          if (r.pub) {
+            delete r.pub.update;
+            rs = r.pub;
+          }
+        }
       }
     }
 
     if (!skip) {
       // 获取目标项目目录、子目录下的文件MD5对象
       await getFile(_src, rs, act);
+      console.log('wiafile make getFile', {dir, rs, act});
 
-      // console.log('wiamap', {dir, rs, act});
-
-      if (!_.isEmpty(rs)) save(rs, file);
+      if (!_.isEmpty(rs)) {
       R = rs.update || {};
+        if (act === 'build') rs = {local: rs, wia: r && r.pub ? r.pub : {}};
+        else rs = {pub: rs, local: r && r.local ? r.local : {}};
+        console.log('wiafile', {dir, rs, act});
+        save(rs, f);
+      }
     }
   } catch (ex) {
-    console.log(`wiamap exp:${ex.message}`);
+    console.log(`wiafile make exp:${ex.message}`);
   }
 
   return R;
@@ -167,6 +184,7 @@ function checkVer(rs, ver) {
     }
   }
 }
+
 /**
  * 增加版本号
  * @param {*} prj 项目名称
@@ -296,7 +314,11 @@ async function getFile(dir, rs, act) {
         for (let j = 0, jlen = _cfg.exclude.length; j < jlen; j++) {
           const pf = _cfg.exclude[j];
           // eslint-disable-line
-          if (!pf.includes('.js') && new RegExp(`^${pf}$`, 'i').test(d)) {
+          if (
+            !pf.includes('*.') &&
+            !pf.includes('.js') &&
+            new RegExp(`^${pf}$`, 'i').test(d)
+          ) {
             pk = false;
             break;
           }
@@ -315,7 +337,23 @@ async function getFile(dir, rs, act) {
     for (const f of files) {
       // (pf.includes('.js') && v === pf)
       // tree[f] = await promisify(hashFile)(path.join(dir, f), rs, last); // eslint-disable-line
-      pms.push(hashFile(path.join(dir, f), rs, act));
+      let pk = true;
+      // 排除根目录
+      if (_cfg.exclude) {
+        for (let j = 0, jlen = _cfg.exclude.length; j < jlen; j++) {
+          const pf = _cfg.exclude[j];
+          // eslint-disable-line
+          if (
+            pf.includes('*.') &&
+            new RegExp(`${pf.replace('*.', '[\\s\\S]+\\.')}$`, 'i').test(f)
+          ) {
+            console.log('getFile', {pf, f});
+            pk = false;
+            break;
+          }
+        }
+      }
+      if (pk) pms.push(hashFile(path.join(dir, f), rs, act));
     }
     r = await Promise.all(pms);
   } catch (e) {
@@ -328,9 +366,9 @@ async function getFile(dir, rs, act) {
 /**
  * 设置变更文件列表
  * @param {*} rs 写入数据集，变更文件写入 rs.update
- * @param {*} file 当前文件，含路径，含后缀，不含src 根路径
+ * @param {*} f 当前文件，含路径，含后缀，不含src 根路径
  */
-function setUpdate(rs, file) {
+function setUpdate(rs, f) {
   let R = null;
 
   if (!rs) return null;
@@ -343,10 +381,11 @@ function setUpdate(rs, file) {
     r.html = r.html || [];
     r.css = r.css || [];
     r.less = r.less || [];
+    r.img = r.img || [];
     r.asset = r.asset || [];
 
     // 'mall/page/login': './src/mall/page/login.js'
-    switch (path.extname(file).toLowerCase()) {
+    switch (path.extname(f).toLowerCase()) {
       case '.js':
         r = r.js;
         break;
@@ -359,11 +398,17 @@ function setUpdate(rs, file) {
       case '.css':
         r = r.css;
         break;
+      case '.jpg':
+        r = r.img;
+        break;
+      case '.png':
+        r = r.img;
+        break;
       default:
         r = r.asset;
     }
 
-    if (r) r.push(file);
+    if (r) r.push(f);
 
     R = r;
   } catch (e) {
@@ -376,12 +421,12 @@ function setUpdate(rs, file) {
 /**
  * 生成指定文件的 MD5值，写入rs.cur对象，用于判断文件是否变化
  * 变化文件，写入 rs.update
- * @param {*} file
+ * @param {*} f 文件
  * @param {*} rs 写入的数据集
  */
-function hashFile(file, rs, act) {
+function hashFile(f, rs, act = 'build') {
   return new Promise((res, rej) => {
-    const r = fs.createReadStream(file);
+    const r = fs.createReadStream(f);
     const md5 = crypto.createHash('md5');
     let hex = '';
 
@@ -390,7 +435,7 @@ function hashFile(file, rs, act) {
       hex = md5.digest('hex');
       if (rs) {
         // 去掉项目根路径
-        let f = file.replace(_src, '');
+        f = f.replace(_src, '');
         if (f.startsWith(path.sep)) f = f.substr(1);
 
         if (path.sep !== '/') f = f.replace(/\\/gim, '/'); // 统一路径为/，方便处理
@@ -420,11 +465,8 @@ function hashFile(file, rs, act) {
             break;
           }
 
+          // 默认放入 last
           default: {
-            if (!rs.last) rs.last = {time: utils.logDate(), tick: Date.now()};
-            rs.last[f] = hex;
-            // 上次记录，优先比较 building，没有则 比较 build
-            hs = rs.building || rs.build || rs.pubing || rs.pub || {};
             break;
           }
         }
@@ -442,40 +484,13 @@ function hashFile(file, rs, act) {
 /**
  * 按yaml格式存储到指定文件
  * @param {object} rs
- * @param {string} file
+ * @param {string} f
  */
-function save(rs, file) {
+function save(rs, f) {
   const yml = yaml.safeDump(rs);
-  fs.writeFileSync(file, yml, err => {
+  fs.writeFileSync(f, yml, err => {
     if (err) console.log(`save exp:${err.message}`);
   });
-}
-
-/**
- * 把last文件列表变成building文件列表
- * 编译成功，这部分文件列表变成 build
- * 不成功，则清除
- * @param {*} dir
- */
-function building(dir) {
-  let R = {};
-  try {
-    dir = dir || process.cwd(); // 默认指向运行目录
-    const file = path.resolve(dir, './wiamap.yml');
-    let r = {};
-    if (fs.existsSync(file)) r = yaml.safeLoad(fs.readFileSync(file, 'utf8')); // eslint-disable-line
-    if (r && r.last) {
-      const {last, building: x, ...z} = r;
-      const rs = {building: last, ...z};
-      save(rs, file);
-
-      R = rs.update;
-    }
-  } catch (e) {
-    console.log(`building exp:${e.message}`);
-  }
-
-  return R;
 }
 
 /**
@@ -487,49 +502,26 @@ function builded(dir, succ = true) {
   let R = {};
   try {
     dir = dir || process.cwd(); // 默认指向运行目录
-    const file = path.resolve(dir, './wiamap.yml');
+    const f = path.resolve(dir, './wiafile.yml');
     let r = {};
-    if (fs.existsSync(file)) r = yaml.safeLoad(fs.readFileSync(file, 'utf8')); // require(file); // eslint-disable-line
-    if (r && r.building) {
-      let rs = {};
+    if (fs.existsSync(f)) r = yaml.safeLoad(fs.readFileSync(f, 'utf8')); // require(file); // eslint-disable-line
+    if (r && r.local && r.local.building) {
+      const rs = {local: {}, wia: r.wia ? r.wia : {}};
       if (succ) {
-        const {building: build, build: x, ...z} = r;
-        rs = {build, ...z};
+        // const {building: build, build: x, ...z} = r;
+        // rs = {build, ...z};
+        rs.local.build = r.local.building || {};
+        rs.local.update = r.local.update || {};
       } else {
-        rs = r;
-        rs.building && delete rs.building;
+        rs.local.build = r.local.build || {};
+        rs.local.update = r.local.update || {};
       }
-      save(rs, file);
+      save(rs, f);
 
-      R = rs.update;
+      R = rs.local.update;
     }
   } catch (e) {
-    console.log(`builded exp:${e.message}`);
-  }
-
-  return R;
-}
-
-/**
- * Last变成正在发布的文件列表
- * @param {*} dir
- */
-function pubing(dir) {
-  let R = {};
-  try {
-    dir = dir || process.cwd(); // 默认指向运行目录
-    const file = path.resolve(dir, './wiamap.yml');
-    let r = {};
-    if (fs.existsSync(file)) r = yaml.safeLoad(fs.readFileSync(file, 'utf8')); // require(file); // eslint-disable-line
-    if (r && r.last) {
-      const {last, pubing: x, ...z} = r;
-      const rs = {pubing: last, ...z};
-      save(rs, file);
-
-      R = rs.update;
-    }
-  } catch (e) {
-    console.log(`building exp:${e.message}`);
+    console.log(`wiafile builded exp:${e.message}`);
   }
 
   return R;
@@ -543,29 +535,38 @@ function pubed(dir, succ = true) {
   let R = {};
   try {
     dir = dir || process.cwd(); // 默认指向运行目录
-    const file = path.resolve(dir, './wiamap.yml');
+    const f = path.resolve(dir, './wiafile.yml');
     let r = {};
-    if (fs.existsSync(file)) r = yaml.safeLoad(fs.readFileSync(file, 'utf8')); // require(file); // eslint-disable-line
-    if (r && r.pubing) {
-      let rs = {};
+    if (fs.existsSync(f)) r = yaml.safeLoad(fs.readFileSync(f, 'utf8')); // require(file); // eslint-disable-line
+    if (r && r.wia && r.wia.pubing) {
+      const rs = {wia: {}, local: r.local ? r.local : {}};
       if (succ) {
-        const {pubing: pub, pub: x, ...z} = r;
-        rs = {pub, ...z};
+        // const {pubing: pub, pub: x, ...z} = r;
+        // rs = {pub, ...z};
+        rs.wia.pub = r.pub.pubing;
+        rs.wia.update = r.wia.update;
       } else {
-        rs = r;
-        rs.pubing && delete rs.pubing;
+        rs.wia.pub = r.wia.pub;
+        rs.iwa.update = r.wia.update;
       }
 
-      save(rs, file);
+      save(rs, f);
       R = rs.update;
     }
   } catch (e) {
-    console.log(`builded exp:${e.message}`);
+    console.log(`pubed exp:${e.message}`);
   }
 
   return R;
 }
 
-// wiamap(); // 单独调试用
+// make(); // 单独调试用
+async function build(dir) {
+  return make(dir, 'build');
+}
 
-module.exports = {map, building, builded, pubing, pubed};
+async function pub(dir) {
+  return make(dir, 'pub');
+}
+
+module.exports = {build, builded, pub, pubed};

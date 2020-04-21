@@ -13,10 +13,71 @@ let _src = '';
 
 /**
  * 检查指定项目文件是否更新，如更新则重新打包，并自动部署到腾讯云CDN
- * @param {* } prj 项目名称， 比如 ebx， 或 drone
+ * @param {string} dir 路径
  */
 async function pages(dir) {
   let R = '';
+
+  try {
+    const files = await getPage(dir);
+    const pf = {}; // page file
+    files.forEach(v => {
+      let name = '';
+      const file = v;
+
+      // 去掉包含page路径
+      if (v.includes('page/')) {
+        const fl = path.parse(v.replace('page/', ''));
+        if (fl.dir) {
+          name = `${fl.dir}/${fl.name}`;
+          let ns = name.split('/');
+          ns = ns.map(n => n[0].toUpperCase() + n.slice(1));
+          name = ns.join('');
+          pf[name] = `./${file}`;
+        } else {
+          name = fl.name[0].toUpperCase() + fl.name.slice(1);
+          pf[name] = `./${file}`;
+        }
+      }
+    });
+
+    // page下的文件写入pages.js文件
+    if (!_.isEmpty(pf)) R = pagefile(pf);
+  } catch (err) {
+    console.log(`pages exp:${err.message}`);
+  }
+
+  return R;
+}
+
+/**
+ * webpack 打包文件，每个文件单独打包
+ * @param {string} dir 路径
+ * 返回 {'page/login': './src/page/login.js'}
+ */
+async function pack(dir) {
+  const R = {};
+
+  try {
+    const files = await getPage(dir);
+    files.forEach(v => {
+      const fl = path.parse(v);
+      const name = `${fl.dir}/${fl.name}`;
+      R[name] = `./src/${v}`;
+    });
+  } catch (err) {
+    console.log(`pack exp:${err.message}`);
+  }
+
+  return R;
+}
+
+/**
+ * 获取指定路径中的js文件列表
+ * @param {string} dir 路径
+ */
+async function getPage(dir) {
+  let R = [];
 
   try {
     dir = dir || process.cwd();
@@ -60,34 +121,15 @@ async function pages(dir) {
             }
           }
         }
-        console.log('pages', {pk, v});
+        console.log('getPage', {pk, v});
         // 需编译文件
         if (pk) {
-          let name = '';
-          const file = v;
-
-          // 去掉包含page路径
-          if (v.includes('page/')) {
-            const fl = path.parse(v.replace('page/', ''));
-            if (fl.dir) {
-              name = `${fl.dir}/${fl.name}`;
-              let ns = name.split('/');
-              ns = ns.map(n => n[0].toUpperCase() + n.slice(1));
-              name = ns.join('');
-              pf[name] = `./${file}`;
-            } else {
-              name = fl.name[0].toUpperCase() + fl.name.slice(1);
-              pf[name] = `./${file}`;
-            }
+          R.push(v);
           }
         }
       }
-
-      // page下的文件写入pages.js文件
-      if (!_.isEmpty(pf)) R = pagefile(pf);
-    }
   } catch (err) {
-    console.log(`pages exp:${err.message}`);
+    console.log(`getPage exp:${err.message}`);
   }
 
   return R;
@@ -195,6 +237,35 @@ async function getFile(dir, rs) {
   return tree;
 }
 
+function clear(dir) {
+  try {
+    dir = dir || process.cwd();
+    _src = path.join(dir, './src');
+    const ps = `
+export default class Pages {
+}
+`;
+    let lastH = '';
+    const f = path.join(_src, './pages.js');
+    if (fs.existsSync(f)) {
+      const tx = fs.readFileSync(f, 'utf8');
+      lastH = hash(tx);
+    }
+    // 有变化，则更新pages文件
+    if (hash(ps) !== lastH) {
+      console.log('clear save...');
+      // 将内容写入page.js 文件
+      fs.writeFileSync(
+        f,
+        ps,
+        e => e && console.log(`clear save ${f} exp:${e.message}`)
+      );
+    }
+  } catch (err) {
+    console.log(`clear exp:${err.message}`);
+  }
+}
+
 // pages(); // 单独调试用
 
-module.exports = pages;
+module.exports = {pages, pack, clear};

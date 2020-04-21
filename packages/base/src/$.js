@@ -5,6 +5,8 @@
  * 相关方法与用法与 zepto、jQuery兼容。
  */
 
+import support from './support';
+
 var emptyArray = [],
   class2type = {},
   concat = emptyArray.concat,
@@ -233,9 +235,9 @@ function $(sel, ctx) {
 
 // plugin compatibility
 $.uuid = 0;
-$.support = {};
 $.expr = {};
 $.noop = function() {};
+$.support = support;
 
 // 静态属性,可直接调用
 $.type = function(obj) {
@@ -339,11 +341,55 @@ $.qu = function(sel, ctx) {
 };
 
 // 返回数组, 便于 forEach
-$.qsa = $.qus = function(sel, ctx) {
+$.qus = $.qsa = function(sel, ctx) {
   var R = null;
   if (ctx)
     R = D.isD(ctx) ? ctx[0].querySelectorAll(sel) : ctx.querySelectorAll(sel);
   else R = document.querySelectorAll(sel);
+  if (R && R.length > 0) return slice.call(R);
+  else return [];
+};
+
+/**
+ * 通过name获得dom对象
+ * getElementsByName 只能用于document全局，querySelector 可用于局部
+ * @param {string} name
+ * @param {object} ctx parent dom
+ */
+$.qn = function qn(name, ctx) {
+  const sel = `[name="${name}"]`;
+  return $.qu(sel, ctx);
+}
+
+// 返回指定name数组, 便于 forEach
+// 效率高于qus
+$.qns = function(sel, ctx) {
+  var R = null;
+  if (ctx)
+    R = D.isD(ctx) ? ctx[0].getElementsByName(sel) : ctx.getElementsByName(sel);
+  else R = document.getElementsByName(sel);
+  if (R && R.length > 0) return slice.call(R);
+  else return [];
+};
+
+// 返回指定class name数组, 便于 forEach
+// 效率高于qus
+$.qcs = function(sel, ctx) {
+  var R = null;
+  if (ctx)
+    R = D.isD(ctx) ? ctx[0].getElementsByClassName(sel) : ctx.getElementsByClassName(sel);
+  else R = document.getElementsByClassName(sel);
+  if (R && R.length > 0) return slice.call(R);
+  else return [];
+};
+
+// 返回指定tag name数组, 便于 forEach
+// 效率高于qus
+$.qts = function(sel, ctx) {
+  var R = null;
+  if (ctx)
+    R = D.isD(ctx) ? ctx[0].getElementsByTagName(sel) : ctx.getElementsByTagName(sel);
+  else R = document.getElementsByTagName(sel);
   if (R && R.length > 0) return slice.call(R);
   else return [];
 };
@@ -400,33 +446,27 @@ $.merge = function(...args) {
   });
   return to;
 };
-$.touch = function() {
-  return !!(
-    window.navigator.maxTouchPoints > 0 ||
-    'ontouchstart' in window ||
-    (window.DocumentTouch && document instanceof window.DocumentTouch)
-  );
-};
 $.fastLink = function() {
   // a 标签加载 touchstart 事件,避免 300毫秒等待
   try {
-    if (!$.touch) return;
+    if (!$.support.touch) return;
     const links = $.qus('a');
     links.forEach(link => {
       if (link.hasAttribute('fastlink') || link.hasAttribute('fastLink')) {
         let startX;
         let startY;
         link.ontouchstart = ev => {
+					ev.preventDefault();
           startX = ev.changedTouches[0].clientX;
           startY = ev.changedTouches[0].clientY;
         };
         link.ontouchend = ev => {
           if (
-            Math.abs(ev.changedTouches[0].clientX - startX) <= 10 &&
-            Math.abs(ev.changedTouches[0].clientY - startY) <= 10
+            Math.abs(ev.changedTouches[0].clientX - startX) <= 5 &&
+            Math.abs(ev.changedTouches[0].clientY - startY) <= 5
           ) {
             ev.preventDefault();
-            if (link.hasAttribute('back')) return window.history.back();
+            if (link.hasAttribute('back') || link.hasClass('back')) return window.history.back();
             if (link.href) window.location.href = link.href;
           }
         };
@@ -436,7 +476,6 @@ $.fastLink = function() {
     alert(`fastLink exp: ${e.message}`);
   }
 };
-
 $.requestAnimationFrame = function(callback) {
   if (window.requestAnimationFrame)
     return window.requestAnimationFrame(callback);

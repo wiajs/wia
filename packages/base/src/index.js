@@ -13,9 +13,12 @@ import * as Event from './event';
 import * as Store from './store';
 import * as Ajax from './ajax';
 import * as Module from './module';
+import device from './device';
 
 // export $ to window globle
 window.$ === undefined && (window.$ = $);
+
+$.device = device;
 
 // 将 event 模块中的事件方法加载到 $
 Object.keys(Event).forEach(k => {
@@ -33,7 +36,7 @@ Object.keys(Store).forEach(k => {
   $.store[k] = Store[k];
 });
 
-// 将 module 模块中的方法加载到 $.M
+// 将 module 模块中的方法加载到 $.wms
 $.M = {};
 Object.keys(Module).forEach(k => {
   $.M[k] = Module[k];
