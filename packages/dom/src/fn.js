@@ -1,4 +1,10 @@
-const {Dom} = $;
+/*!
+ * Expand $.fn
+ * 扩展 $.fn
+ * same syntax as well known jQuery library
+ */
+
+const {Dom} = window.$;
 
 const emptyArray = [];
 
@@ -47,9 +53,9 @@ function removeAttr(attr) {
   return this;
 }
 
-function hasAttr(attr) {
+function hasAttr(name) {
   return emptyArray.some.call(this, function (el) {
-    return el.hasAttribute(attr);
+    return el.hasAttribute(name);
   });
 }
 
@@ -251,7 +257,7 @@ function on(...args) {
     listener.apply(this, eventData);
   }
 
-  // on 函数内共享闭包变�
+  // on 函数内共享闭包变量
   let touchStartX;
   let touchStartY;
   function touchStart(ev) {
@@ -261,11 +267,13 @@ function on(...args) {
   }
 
   function touchEnd(ev) {
-    ev.preventDefault(); // 阻止后续�?click 事件触发
     const x = Math.abs(ev.changedTouches[0].clientX - touchStartX);
     const y = Math.abs(ev.changedTouches[0].clientY - touchStartY);
     // console.log('dom touchEnd', {x, y});
-    if (x <= 5 && y <= 5) return clickEvent.call(this, ev);
+    if (x <= 5 && y <= 5) {
+      // ev.preventDefault(); // 不阻止后续的 onclick 事件
+			return clickEvent.call(this, ev);
+		}
   }
 
   const events = eventType.split(' ');
@@ -605,6 +613,18 @@ function forEach(callback) {
   return this;
 }
 
+function some(callback) {
+  return emptyArray.some.call(this, function (el, idx) {
+    return callback.call(el, el, idx);
+  });
+}
+
+function every(callback) {
+  return emptyArray.every.call(this, function (el, idx) {
+    return callback.call(el, el, idx);
+  });
+}
+
 /*
 // Iterate over the collection passing elements to `callback`
 function each(callback) {
@@ -680,7 +700,7 @@ function text(text) {
 }
 
 /**
- * 查看选择的元素是否匹配选择�
+ * 查看选择的元素是否匹配选择器
  */
 function is(selector) {
   const el = this[0];
@@ -847,6 +867,27 @@ function next(selector) {
   }
   return new Dom([]);
 }
+
+function nextOne(selector) {
+  const nextEls = [];
+  let el = this[0];
+  if (!el) return new Dom([]);
+  while (el.nextElementSibling) {
+    const next = el.nextElementSibling; // eslint-disable-line
+    if (selector) {
+      if ($(next).is(selector)) {
+				nextEls.push(next);
+				break;
+			}
+    } else if (next) {
+			nextEls.push(next);
+			break;
+		}
+    el = next;
+  }
+  return new Dom(nextEls);
+}
+
 function nextAll(selector) {
   const nextEls = [];
   let el = this[0];
@@ -860,6 +901,7 @@ function nextAll(selector) {
   }
   return new Dom(nextEls);
 }
+
 function prev(selector) {
   if (this.length > 0) {
     const el = this[0];
@@ -878,6 +920,27 @@ function prev(selector) {
   }
   return new Dom([]);
 }
+
+function prevOne(selector) {
+  const prevEls = [];
+  let el = this[0];
+  if (!el) return new Dom([]);
+  while (el.previousElementSibling) {
+    const prev = el.previousElementSibling; // eslint-disable-line
+    if (selector) {
+      if ($(prev).is(selector)) {
+				prevEls.push(prev);
+				break;
+			}
+    } else if (prev) {
+			prevEls.push(prev);
+			break;
+		}
+    el = prev;
+  }
+  return new Dom(prevEls);
+}
+
 function prevAll(selector) {
   const prevEls = [];
   let el = this[0];
@@ -896,7 +959,7 @@ function siblings(selector) {
 }
 
 /**
- * 所有符合条件的父元�
+ * 所有符合条件的父元素
  */
 function parent(selector) {
   const parents = []; // eslint-disable-line
@@ -914,7 +977,7 @@ function parent(selector) {
 }
 
 /**
- * 从当前元素的父元素开始沿 DOM 树向�?获得匹配选择器的所有祖先元素�
+ * 从当前元素的父元素开始沿 DOM 树向上,获得匹配选择器的所有祖先元素。
  */
 function parents(selector) {
   const parents = []; // eslint-disable-line
@@ -933,7 +996,7 @@ function parents(selector) {
 }
 
 /**
- * 从当前元素开始沿 DOM 树向�?获得匹配选择器的第一个祖先元素�
+ * 从当前元素开始沿 DOM 树向上,获得匹配选择器的第一个祖先元素。
  */
 function closest(selector) {
   let closest = this; // eslint-disable-line
@@ -966,22 +1029,22 @@ function find(selector) {
  * @param {*} selector
  */
 function children(selector) {
-  const children = []; // eslint-disable-line
+  const cs = []; // eslint-disable-line
   for (let i = 0; i < this.length; i += 1) {
     const childNodes = this[i].childNodes;
 
     for (let j = 0; j < childNodes.length; j += 1) {
       if (!selector) {
-        if (childNodes[j].nodeType === 1) children.push(childNodes[j]);
+        if (childNodes[j].nodeType === 1) cs.push(childNodes[j]);
       } else if (
         childNodes[j].nodeType === 1 &&
         $(childNodes[j]).is(selector)
       ) {
-        children.push(childNodes[j]);
+        cs.push(childNodes[j]);
       }
     }
   }
-  return new Dom($.uniq(children));
+  return new Dom($.uniq(cs));
 }
 
 function remove() {
@@ -1032,7 +1095,7 @@ function hasChild() {
 }
 
 /**
- * 第一个子元素节点，不含文本节�
+ * 第一个子元素节点，不含文本节点
  */
 function firstChild() {
   if (!this.dom || this.dom.children.length === 0) return null;
@@ -1059,7 +1122,7 @@ function nextNode() {
 }
 
 /**
- * 最后一个子元素节点，不含文本节�
+ * 最后一个子元素节点，不含文本节点
  */
 function lastChild() {
   if (!this.dom || this.dom.children.length === 0) return null;
@@ -1076,7 +1139,7 @@ function childCount() {
 
 /**
  * 返回的上级节点名称的元素节点，可用closest替代
- * ff parentNode 会返�?�?节点
+ * ff parentNode 会返回 空 节点
  * ff textNode节点 没有 tagName
  */
 function upperTag(tag) {
@@ -1188,7 +1251,7 @@ function getCursorPos() {
 }
 
 /**
- * 得到光标的位�
+ * 得到光标的位置
  */
 function getCursorPosition() {
   if (!this.dom) return 0;
@@ -1218,7 +1281,7 @@ function setCursorPos(pos) {
 }
 
 /**
- * 移到第一�
+ * 移到第一行
  */
 function moveFirst() {
   this.rowindex = 0;
@@ -1275,7 +1338,7 @@ function qc(cls) {
 function qcs(cls) {
   let R = this.dom?.getElementsByClassName(cls);
   if (R && R.length > 0) R = [].slice.call(R);
-  else return (R = []);
+  else R = [];
 
   return new Dom(R);
 }
@@ -1295,7 +1358,7 @@ function qt(tag) {
 function qts(tag) {
   let R = this.dom?.getElementsByTagName(tag);
   if (R && R.length > 0) R = [].slice.call(R);
-  else return (R = []);
+  else R = [];
 
   return new Dom(R);
 }
@@ -1330,6 +1393,8 @@ export {
   toArray,
   each,
   forEach,
+	some,
+	every,
   filter,
   map,
   html,
@@ -1345,27 +1410,33 @@ export {
   insertBefore,
   insertAfter,
   next,
+	nextOne,
   nextAll,
   prev,
+	prevOne,
   prevAll,
   siblings,
   parent,
   parents,
   closest,
   qu,
-  qn,
-  qn as name,
-  qa,
-  qt,
-  qt as tag,
-  qc,
   qus,
+  qn,
   qns,
-  qns as names,
+  qa,
   qas,
+  qt,
   qts,
-  qts as tags,
+  qc,
   qcs,
+  qa as att,
+  qas as atts,
+  qn as name,
+  qns as names,
+  qt as tag,
+  qts as tags,
+  qc as class,
+  qcs as classes,
   find,
   hasChild,
   children,

@@ -54,7 +54,7 @@ function genConfig(opts) {
       format: opts.format,
       sourcemap: process.env.NODE_ENV === 'development',
       banner,
-      name: '$',
+      name: '$$', // $ 会覆盖 window.$
       globals: {}, // 全局变量
     },
   };

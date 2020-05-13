@@ -117,7 +117,9 @@ function animate(initialProps, initialParams) {
           params.progress(
             els,
             Math.max(Math.min((time - startTime) / params.duration, 1), 0),
-            startTime + params.duration - time < 0 ? 0 : startTime + params.duration - time,
+            startTime + params.duration - time < 0
+              ? 0
+              : startTime + params.duration - time,
             startTime
           );
         }
@@ -127,10 +129,14 @@ function animate(initialProps, initialParams) {
           if (done || el.done) return;
           Object.keys(props).forEach(prop => {
             if (done || el.done) return;
-            progress = Math.max(Math.min((time - startTime) / params.duration, 1), 0);
+            progress = Math.max(
+              Math.min((time - startTime) / params.duration, 1),
+              0
+            );
             easeProgress = a.easingProgress(params.easing, progress);
             const {initialValue, finalValue, unit} = el[prop];
-            el[prop].currentValue = initialValue + easeProgress * (finalValue - initialValue);
+            el[prop].currentValue =
+              initialValue + easeProgress * (finalValue - initialValue);
             const currentValue = el[prop].currentValue;
 
             if (
@@ -196,11 +202,16 @@ function stop() {
 }
 
 /**
- * 通过css3 Translate 移动后，获取 x 或 y 坐标
+ * 通过css3 Translate 移动后，获取 x �?y 坐标
  * @param {*} el
  * @param {*} axis
  */
-$.getTranslate = function(el, axis = 'x') {
+function getTranslate(axis = 'x') {
+  const els = this;
+  if (!els || !els.dom) return 0;
+
+  const el = els.dom;
+
   let matrix;
   let curTransform;
   let transformMatrix;
@@ -217,7 +228,9 @@ $.getTranslate = function(el, axis = 'x') {
     }
     // Some old versions of Webkit choke when 'none' is passed; pass
     // empty string instead in this case
-    transformMatrix = new window.WebKitCSSMatrix(curTransform === 'none' ? '' : curTransform);
+    transformMatrix = new window.WebKitCSSMatrix(
+      curTransform === 'none' ? '' : curTransform
+    );
   } else {
     transformMatrix =
       curStyle.MozTransform ||
@@ -225,7 +238,9 @@ $.getTranslate = function(el, axis = 'x') {
       curStyle.MsTransform ||
       curStyle.msTransform ||
       curStyle.transform ||
-      curStyle.getPropertyValue('transform').replace('translate(', 'matrix(1, 0, 0, 1,');
+      curStyle
+        .getPropertyValue('transform')
+        .replace('translate(', 'matrix(1, 0, 0, 1,');
     matrix = transformMatrix.toString().split(',');
   }
 
@@ -246,14 +261,6 @@ $.getTranslate = function(el, axis = 'x') {
     else curTransform = parseFloat(matrix[5]);
   }
   return curTransform || 0;
-};
-
-function getTranslate(axis = 'x') {
-  let R = 0;
-  const els = this;
-  if (els && els.dom) R = $.getTranslate(els.dom, axis);
-
-  return R;
 }
 
 export {animate, stop, getTranslate};

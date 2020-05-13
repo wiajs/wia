@@ -1,5 +1,5 @@
 /*!
-  * wia dom v0.1.8
+  * wia dom v0.1.9
   * (c) 2020 Sibyl Yu
   * @license MIT
   */
@@ -7,8 +7,12 @@
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
-var _$ = $,
-    Dom = _$.Dom;
+/*!
+ * Expand $.fn
+ * 扩展 $.fn
+ * same syntax as well known jQuery library
+ */
+var Dom = window.$.Dom;
 var emptyArray = [];
 
 function ready(cb) {
@@ -52,9 +56,9 @@ function removeAttr(attr) {
   return this;
 }
 
-function hasAttr(attr) {
+function hasAttr(name) {
   return emptyArray.some.call(this, function (el) {
-    return el.hasAttribute(attr);
+    return el.hasAttribute(name);
   });
 } // eslint-disable-next-line
 
@@ -297,7 +301,7 @@ function on() {
     }
 
     listener.apply(this, eventData);
-  } // on 函数内共享闭包变�
+  } // on 函数内共享闭包变量
 
 
   var touchStartX;
@@ -310,12 +314,13 @@ function on() {
   }
 
   function touchEnd(ev) {
-    ev.preventDefault(); // 阻止后续�?click 事件触发
-
     var x = Math.abs(ev.changedTouches[0].clientX - touchStartX);
     var y = Math.abs(ev.changedTouches[0].clientY - touchStartY); // console.log('dom touchEnd', {x, y});
 
-    if (x <= 5 && y <= 5) return clickEvent.call(this, ev);
+    if (x <= 5 && y <= 5) {
+      // ev.preventDefault(); // 不阻止后续的 onclick 事件
+      return clickEvent.call(this, ev);
+    }
   }
 
   var events = eventType.split(' ');
@@ -715,6 +720,18 @@ function forEach(callback) {
   });
   return this;
 }
+
+function some(callback) {
+  return emptyArray.some.call(this, function (el, idx) {
+    return callback.call(el, el, idx);
+  });
+}
+
+function every(callback) {
+  return emptyArray.every.call(this, function (el, idx) {
+    return callback.call(el, el, idx);
+  });
+}
 /*
 // Iterate over the collection passing elements to `callback`
 function each(callback) {
@@ -800,7 +817,7 @@ function text(text) {
   return this;
 }
 /**
- * 查看选择的元素是否匹配选择�
+ * 查看选择的元素是否匹配选择器
  */
 
 
@@ -990,7 +1007,7 @@ function next(selector) {
   return new Dom([]);
 }
 
-function nextAll(selector) {
+function nextOne(selector) {
   var nextEls = [];
   var el = this[0];
   if (!el) return new Dom([]);
@@ -999,10 +1016,34 @@ function nextAll(selector) {
     var _next = el.nextElementSibling; // eslint-disable-line
 
     if (selector) {
-      if ($(_next).is(selector)) nextEls.push(_next);
-    } else nextEls.push(_next);
+      if ($(_next).is(selector)) {
+        nextEls.push(_next);
+        break;
+      }
+    } else if (_next) {
+      nextEls.push(_next);
+      break;
+    }
 
     el = _next;
+  }
+
+  return new Dom(nextEls);
+}
+
+function nextAll(selector) {
+  var nextEls = [];
+  var el = this[0];
+  if (!el) return new Dom([]);
+
+  while (el.nextElementSibling) {
+    var _next2 = el.nextElementSibling; // eslint-disable-line
+
+    if (selector) {
+      if ($(_next2).is(selector)) nextEls.push(_next2);
+    } else nextEls.push(_next2);
+
+    el = _next2;
   }
 
   return new Dom(nextEls);
@@ -1027,7 +1068,7 @@ function prev(selector) {
   return new Dom([]);
 }
 
-function prevAll(selector) {
+function prevOne(selector) {
   var prevEls = [];
   var el = this[0];
   if (!el) return new Dom([]);
@@ -1036,10 +1077,34 @@ function prevAll(selector) {
     var _prev = el.previousElementSibling; // eslint-disable-line
 
     if (selector) {
-      if ($(_prev).is(selector)) prevEls.push(_prev);
-    } else prevEls.push(_prev);
+      if ($(_prev).is(selector)) {
+        prevEls.push(_prev);
+        break;
+      }
+    } else if (_prev) {
+      prevEls.push(_prev);
+      break;
+    }
 
     el = _prev;
+  }
+
+  return new Dom(prevEls);
+}
+
+function prevAll(selector) {
+  var prevEls = [];
+  var el = this[0];
+  if (!el) return new Dom([]);
+
+  while (el.previousElementSibling) {
+    var _prev2 = el.previousElementSibling; // eslint-disable-line
+
+    if (selector) {
+      if ($(_prev2).is(selector)) prevEls.push(_prev2);
+    } else prevEls.push(_prev2);
+
+    el = _prev2;
   }
 
   return new Dom(prevEls);
@@ -1049,7 +1114,7 @@ function siblings(selector) {
   return this.nextAll(selector).add(this.prevAll(selector));
 }
 /**
- * 所有符合条件的父元�
+ * 所有符合条件的父元素
  */
 
 
@@ -1069,7 +1134,7 @@ function parent(selector) {
   return $($.uniq(parents));
 }
 /**
- * 从当前元素的父元素开始沿 DOM 树向�?获得匹配选择器的所有祖先元素�
+ * 从当前元素的父元素开始沿 DOM 树向上,获得匹配选择器的所有祖先元素。
  */
 
 
@@ -1093,7 +1158,7 @@ function parents(selector) {
   return $($.uniq(parents));
 }
 /**
- * 从当前元素开始沿 DOM 树向�?获得匹配选择器的第一个祖先元素�
+ * 从当前元素开始沿 DOM 树向上,获得匹配选择器的第一个祖先元素。
  */
 
 
@@ -1136,21 +1201,21 @@ function find(selector) {
 
 
 function children(selector) {
-  var children = []; // eslint-disable-line
+  var cs = []; // eslint-disable-line
 
   for (var i = 0; i < this.length; i += 1) {
     var childNodes = this[i].childNodes;
 
     for (var j = 0; j < childNodes.length; j += 1) {
       if (!selector) {
-        if (childNodes[j].nodeType === 1) children.push(childNodes[j]);
+        if (childNodes[j].nodeType === 1) cs.push(childNodes[j]);
       } else if (childNodes[j].nodeType === 1 && $(childNodes[j]).is(selector)) {
-        children.push(childNodes[j]);
+        cs.push(childNodes[j]);
       }
     }
   }
 
-  return new Dom($.uniq(children));
+  return new Dom($.uniq(cs));
 }
 
 function remove() {
@@ -1213,7 +1278,7 @@ function hasChild() {
   return this.dom.children.length > 0;
 }
 /**
- * 第一个子元素节点，不含文本节�
+ * 第一个子元素节点，不含文本节点
  */
 
 
@@ -1244,7 +1309,7 @@ function nextNode() {
   return R;
 }
 /**
- * 最后一个子元素节点，不含文本节�
+ * 最后一个子元素节点，不含文本节点
  */
 
 
@@ -1263,7 +1328,7 @@ function childCount() {
 }
 /**
  * 返回的上级节点名称的元素节点，可用closest替代
- * ff parentNode 会返�?�?节点
+ * ff parentNode 会返回 空 节点
  * ff textNode节点 没有 tagName
  */
 
@@ -1377,7 +1442,7 @@ function getCursorPos() {
   return R;
 }
 /**
- * 得到光标的位�
+ * 得到光标的位置
  */
 
 
@@ -1406,7 +1471,7 @@ function setCursorPos(pos) {
   rg.select();
 }
 /**
- * 移到第一�
+ * 移到第一行
  */
 
 
@@ -1477,7 +1542,7 @@ function qcs(cls) {
   var _this$dom5;
 
   var R = (_this$dom5 = this.dom) === null || _this$dom5 === void 0 ? void 0 : _this$dom5.getElementsByClassName(cls);
-  if (R && R.length > 0) R = [].slice.call(R);else return R = [];
+  if (R && R.length > 0) R = [].slice.call(R);else R = [];
   return new Dom(R);
 }
 /**
@@ -1499,7 +1564,7 @@ function qts(tag) {
   var _this$dom7;
 
   var R = (_this$dom7 = this.dom) === null || _this$dom7 === void 0 ? void 0 : _this$dom7.getElementsByTagName(tag);
-  if (R && R.length > 0) R = [].slice.call(R);else return R = [];
+  if (R && R.length > 0) R = [].slice.call(R);else R = [];
   return new Dom(R);
 }
 
@@ -1534,6 +1599,8 @@ var Methods = /*#__PURE__*/Object.freeze({
   toArray: toArray,
   each: each,
   forEach: forEach,
+  some: some,
+  every: every,
   filter: filter,
   map: map,
   html: html,
@@ -1549,27 +1616,33 @@ var Methods = /*#__PURE__*/Object.freeze({
   insertBefore: insertBefore,
   insertAfter: insertAfter,
   next: next,
+  nextOne: nextOne,
   nextAll: nextAll,
   prev: prev,
+  prevOne: prevOne,
   prevAll: prevAll,
   siblings: siblings,
   parent: parent,
   parents: parents,
   closest: closest,
   qu: qu,
-  qn: qn,
-  name: qn,
-  qa: qa,
-  qt: qt,
-  tag: qt,
-  qc: qc,
   qus: qus,
+  qn: qn,
   qns: qns,
-  names: qns,
+  qa: qa,
   qas: qas,
+  qt: qt,
   qts: qts,
-  tags: qts,
+  qc: qc,
   qcs: qcs,
+  att: qa,
+  atts: qas,
+  name: qn,
+  names: qns,
+  tag: qt,
+  tags: qts,
+  'class': qc,
+  classes: qcs,
   find: find,
   hasChild: hasChild,
   children: children,
@@ -1969,17 +2042,20 @@ function stop() {
   }
 }
 /**
- * 通过css3 Translate 移动后，获取 x 或 y 坐标
+ * 通过css3 Translate 移动后，获取 x �?y 坐标
  * @param {*} el
  * @param {*} axis
  */
 
 
-$.getTranslate = function (el, axis) {
+function getTranslate(axis) {
   if (axis === void 0) {
     axis = 'x';
   }
 
+  var els = this;
+  if (!els || !els.dom) return 0;
+  var el = els.dom;
   var matrix;
   var curTransform;
   var transformMatrix;
@@ -2017,17 +2093,6 @@ $.getTranslate = function (el, axis) {
   }
 
   return curTransform || 0;
-};
-
-function getTranslate(axis) {
-  if (axis === void 0) {
-    axis = 'x';
-  }
-
-  var R = 0;
-  var els = this;
-  if (els && els.dom) R = $.getTranslate(els.dom, axis);
-  return R;
 }
 
 var Animate = /*#__PURE__*/Object.freeze({
