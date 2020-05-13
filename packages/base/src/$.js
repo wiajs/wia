@@ -129,10 +129,6 @@ function compact(array) {
   });
 }
 
-function flatten(array) {
-  return array.length > 0 ? $.fn.concat.apply([], array) : array;
-}
-
 // `$.zepto.fragment` takes a html string and an optional tag name
 // to generate DOM nodes from the given html string.
 // The generated DOM nodes are returned as an array.
@@ -306,8 +302,9 @@ $.map = function(els, cb) {
       value = cb(els[key], key);
       if (value != null) values.push(value);
     }
-  return flatten(values);
+  return values;
 };
+
 $.each = function(els, cb) {
   var i, key;
   if (likeArray(els)) {
@@ -359,7 +356,7 @@ $.qus = $.qsa = function(sel, ctx) {
 $.qn = function qn(name, ctx) {
   const sel = `[name="${name}"]`;
   return $.qu(sel, ctx);
-}
+};
 
 // 返回指定name数组, 便于 forEach
 // 效率高于qus
@@ -377,7 +374,9 @@ $.qns = function(sel, ctx) {
 $.qcs = function(sel, ctx) {
   var R = null;
   if (ctx)
-    R = D.isD(ctx) ? ctx[0].getElementsByClassName(sel) : ctx.getElementsByClassName(sel);
+    R = D.isD(ctx)
+      ? ctx[0].getElementsByClassName(sel)
+      : ctx.getElementsByClassName(sel);
   else R = document.getElementsByClassName(sel);
   if (R && R.length > 0) return slice.call(R);
   else return [];
@@ -388,7 +387,9 @@ $.qcs = function(sel, ctx) {
 $.qts = function(sel, ctx) {
   var R = null;
   if (ctx)
-    R = D.isD(ctx) ? ctx[0].getElementsByTagName(sel) : ctx.getElementsByTagName(sel);
+    R = D.isD(ctx)
+      ? ctx[0].getElementsByTagName(sel)
+      : ctx.getElementsByTagName(sel);
   else R = document.getElementsByTagName(sel);
   if (R && R.length > 0) return slice.call(R);
   else return [];
@@ -456,7 +457,6 @@ $.fastLink = function() {
         let startX;
         let startY;
         link.ontouchstart = ev => {
-					ev.preventDefault();
           startX = ev.changedTouches[0].clientX;
           startY = ev.changedTouches[0].clientY;
         };
@@ -465,8 +465,9 @@ $.fastLink = function() {
             Math.abs(ev.changedTouches[0].clientX - startX) <= 5 &&
             Math.abs(ev.changedTouches[0].clientY - startY) <= 5
           ) {
-            ev.preventDefault();
-            if (link.hasAttribute('back') || link.hasClass('back')) return window.history.back();
+            // ev.preventDefault();
+            if (link.hasAttribute('back') || link.hasClass('back'))
+              return window.history.back();
             if (link.href) window.location.href = link.href;
           }
         };

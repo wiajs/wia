@@ -30,9 +30,12 @@ function get(url, param) {
       }
     };
 
-    if (param)
+    if (param) {
+			if ((typeof patam) === 'object')
+				param = Object.keys(param).map(k => `${k}=${data[k]}`).sort().join('&');
+      
       xhr.open('GET', url + '?' + param, true);
-    else
+    } else
       xhr.open('GET', url, true);
 
     // xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');

@@ -141,6 +141,15 @@ function add(ms) {
   })
 }
 
+
+/**
+ * 应用切换时，需清理缓存的 cache 和 模块
+ * 从安全角度，用户不能覆盖系统模块!!!
+ */
+function clear() {
+	
+}
+
 /**
  * 动态并发下载资源，涉及依赖，需按次序加载
  * load: ['/wia/wia.js?v=1.0.2', '/mall/page.js?v=ver']

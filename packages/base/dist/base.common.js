@@ -1,5 +1,5 @@
 /*!
-  * wia base v0.1.8
+  * wia base v0.1.9
   * (c) 2020 Sibyl Yu
   * @license MIT
   */
@@ -156,10 +156,6 @@ function compact(array) {
   return filter.call(array, function (item) {
     return item != null;
   });
-}
-
-function flatten(array) {
-  return array.length > 0 ? $$1.fn.concat.apply([], array) : array;
 } // `$.zepto.fragment` takes a html string and an optional tag name
 // to generate DOM nodes from the given html string.
 // The generated DOM nodes are returned as an array.
@@ -315,7 +311,7 @@ $$1.map = function (els, cb) {
     value = cb(els[key], key);
     if (value != null) values.push(value);
   }
-  return flatten(values);
+  return values;
 };
 
 $$1.each = function (els, cb) {
@@ -474,14 +470,13 @@ $$1.fastLink = function () {
         var startY;
 
         link.ontouchstart = function (ev) {
-          ev.preventDefault();
           startX = ev.changedTouches[0].clientX;
           startY = ev.changedTouches[0].clientY;
         };
 
         link.ontouchend = function (ev) {
           if (Math.abs(ev.changedTouches[0].clientX - startX) <= 5 && Math.abs(ev.changedTouches[0].clientY - startY) <= 5) {
-            ev.preventDefault();
+            // ev.preventDefault();
             if (link.hasAttribute('back') || link.hasClass('back')) return window.history.back();
             if (link.href) window.location.href = link.href;
           }
@@ -830,8 +825,14 @@ function get$1(url, param) {
       }
     };
 
-    if (param) xhr.open('GET', url + '?' + param, true);else xhr.open('GET', url, true); // xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    if (param) {
+      if (typeof patam === 'object') param = Object.keys(param).map(function (k) {
+        return k + "=" + data[k];
+      }).sort().join('&');
+      xhr.open('GET', url + '?' + param, true);
+    } else xhr.open('GET', url, true); // xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
     // xhr.setRequestHeader('Accept-Encoding', 'gzip');
+
 
     xhr.send(null);
   });
