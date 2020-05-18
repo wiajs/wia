@@ -81,45 +81,56 @@ function prop(props, value) {
     return this;
   }
 }
+
+// 读取或设置 data-* 属性值，保持与jQuery 兼容
+// 在dom节点上自定义 domElementDataStorage 对象存储数据
 function data(key, value) {
+  let R;
   let el;
+  const attrName = 'data-' + name.replace(/([A-Z])/g, '-$1').toLowerCase();
+
   if (typeof value === 'undefined') {
     el = this[0];
     // Get value
     if (el) {
       if (el.domElementDataStorage && key in el.domElementDataStorage) {
-        return el.domElementDataStorage[key];
+        R = el.domElementDataStorage[key];
+      } else R = this.attr(attrName);
       }
-
-      const dataKey = el.getAttribute(`data-${key}`);
-      if (dataKey) {
-        return dataKey;
-      }
-      return undefined;
-    }
-    return undefined;
-  }
-
+    if (R) R = $.deserializeValue(R);
+  } else {
   // Set value
   for (let i = 0; i < this.length; i += 1) {
     el = this[i];
     if (!el.domElementDataStorage) el.domElementDataStorage = {};
     el.domElementDataStorage[key] = value;
+      this.attr(attrName, value);
   }
-  return this;
+    R = this;
+  }
+
+  return R;
 }
+
 function removeData(key) {
+  const attrName = 'data-' + key.replace(/([A-Z])/g, '-$1').toLowerCase();
+
   for (let i = 0; i < this.length; i += 1) {
     const el = this[i];
     if (el.domElementDataStorage && el.domElementDataStorage[key]) {
       el.domElementDataStorage[key] = null;
       delete el.domElementDataStorage[key];
     }
+    el.removeAttribute(attrName);
   }
+
+  return this;
 }
+
 function dataset() {
   const el = this[0];
   if (!el) return undefined;
+
   const dataset = {}; // eslint-disable-line
   if (el.dataset) {
     // eslint-disable-next-line
@@ -135,14 +146,13 @@ function dataset() {
       }
     }
   }
+
   // eslint-disable-next-line
-  for (const key in dataset) {
-    if (dataset[key] === 'false') dataset[key] = false;
-    else if (dataset[key] === 'true') dataset[key] = true;
-    else if (parseFloat(dataset[key]) === dataset[key] * 1) dataset[key] *= 1;
-  }
+  for (const key in dataset) dataset[key] = $.deserializeValue(dataset[key]);
+
   return dataset;
 }
+
 function val(value) {
   const dom = this;
   if (typeof value === 'undefined') {
@@ -518,23 +528,33 @@ function outerHeight(includeMargins) {
   }
   return null;
 }
-function offset() {
-  if (this.length > 0) {
-    const el = this[0];
-    const box = el.getBoundingClientRect();
-    const body = document.body;
-    const clientTop = el.clientTop || body.clientTop || 0;
-    const clientLeft = el.clientLeft || body.clientLeft || 0;
-    const scrollTop = el === window ? window.scrollY : el.scrollTop;
-    const scrollLeft = el === window ? window.scrollX : el.scrollLeft;
-    return {
-      top: box.top + scrollTop - clientTop,
-      left: box.left + scrollLeft - clientLeft,
-    };
+
+// 兼容 jQuery，dom7 是错误的 
+function offset(coordinates) {
+	if (coordinates) return this.each(function(index){
+		var $this = $(this),
+				coords = $.funcArg(this, coordinates, index, $this.offset()),
+				parentOffset = $this.offsetParent().offset(),
+				props = {
+					top:  coords.top  - parentOffset.top,
+					left: coords.left - parentOffset.left
   }
 
-  return null;
-}
+		if ($this.css('position') == 'static') props['position'] = 'relative'
+		$this.css(props)
+	})
+	if (!this.length) return null
+	if (document.documentElement !== this[0] && !$.contains(document.documentElement, this[0]))
+		return {top: 0, left: 0}
+	var obj = this[0].getBoundingClientRect()
+    return {
+		left: obj.left + window.pageXOffset,
+		top: obj.top + window.pageYOffset,
+		width: Math.round(obj.width),
+		height: Math.round(obj.height)
+	}
+  }
+
 function hide() {
   for (let i = 0; i < this.length; i += 1) {
     this[i].style.display = 'none';
@@ -822,6 +842,10 @@ function prependTo(parent) {
   $(parent).prepend(this);
   return this;
 }
+
+/**
+ * 插入到参数节点前面
+ */
 function insertBefore(selector) {
   const before = $(selector);
   for (let i = 0; i < this.length; i += 1) {
@@ -834,6 +858,10 @@ function insertBefore(selector) {
     }
   }
 }
+
+/**
+ * 插入到参数节点后面
+ */
 function insertAfter(selector) {
   const after = $(selector);
   for (let i = 0; i < this.length; i += 1) {
@@ -849,6 +877,10 @@ function insertAfter(selector) {
     }
   }
 }
+
+/**
+ * 同级后节点，如果符合条件返回节点，不符合条件，返回空节点，不含文本节点
+ */
 function next(selector) {
   if (this.length > 0) {
     if (selector) {
@@ -868,26 +900,33 @@ function next(selector) {
   return new Dom([]);
 }
 
-function nextOne(selector) {
+/**
+ * 同级向后查找符合条件的第一个元素节点，不含文本节点
+ */
+function nextNode(selector) {
   const nextEls = [];
   let el = this[0];
   if (!el) return new Dom([]);
+	
+  let next = el.nextElementSibling; // eslint-disable-line
   while (el.nextElementSibling) {
-    const next = el.nextElementSibling; // eslint-disable-line
     if (selector) {
       if ($(next).is(selector)) {
 				nextEls.push(next);
 				break;
 			}
-    } else if (next) {
+    } else {
 			nextEls.push(next);
 			break;
 		}
-    el = next;
+    next = next.nextElementSibling;
   }
   return new Dom(nextEls);
 }
 
+/**
+ * 同级向前查找所有符合条件的元素节点，不含文本节点
+ */
 function nextAll(selector) {
   const nextEls = [];
   let el = this[0];
@@ -902,6 +941,9 @@ function nextAll(selector) {
   return new Dom(nextEls);
 }
 
+/**
+ * 同级前节点，如果符合条件返回节点，不符合条件，返回空节点，不含文本节点
+ */
 function prev(selector) {
   if (this.length > 0) {
     const el = this[0];
@@ -921,26 +963,33 @@ function prev(selector) {
   return new Dom([]);
 }
 
-function prevOne(selector) {
+/**
+ * 同级向前查找符合条件的第一个元素节点，不含文本节点
+ */
+function prevNode(selector) {
   const prevEls = [];
   let el = this[0];
   if (!el) return new Dom([]);
-  while (el.previousElementSibling) {
-    const prev = el.previousElementSibling; // eslint-disable-line
+	
+  let prev = el.previousElementSibling; // eslint-disable-line
+  while (prev) {
     if (selector) {
       if ($(prev).is(selector)) {
 				prevEls.push(prev);
 				break;
 			}
-    } else if (prev) {
+    } else {
 			prevEls.push(prev);
 			break;
 		}
-    el = prev;
+    prev = prev.previousElementSibling;
   }
   return new Dom(prevEls);
 }
 
+/**
+ * 同级向前查找所有符合条件的元素节点，不含文本节点
+ */
 function prevAll(selector) {
   const prevEls = [];
   let el = this[0];
@@ -954,6 +1003,10 @@ function prevAll(selector) {
   }
   return new Dom(prevEls);
 }
+
+/**
+ * 同级前后所有兄弟元素节点，不含文本节点
+ */
 function siblings(selector) {
   return this.nextAll(selector).add(this.prevAll(selector));
 }
@@ -1100,25 +1153,6 @@ function hasChild() {
 function firstChild() {
   if (!this.dom || this.dom.children.length === 0) return null;
   return this.dom.children[0];
-}
-
-/**
- * 下一个元素节点，不含文本节点
- */
-function nextNode() {
-  let R = null;
-  if (!this.dom || this.dom.children.length === 0) return null;
-
-  let nd = this.dom.nextSibling;
-  while (nd) {
-    if (nd.nodeType === 1) {
-      // 元素节点
-      R = nd;
-      break;
-    }
-    nd = this.dom.nextSibling;
-  }
-  return R;
 }
 
 /**
@@ -1410,10 +1444,10 @@ export {
   insertBefore,
   insertAfter,
   next,
-	nextOne,
+	nextNode,
   nextAll,
   prev,
-	prevOne,
+	prevNode,
   prevAll,
   siblings,
   parent,
@@ -1442,7 +1476,6 @@ export {
   children,
   firstChild,
   lastChild,
-  nextNode,
   childCount,
   upperTag,
   childTag,
