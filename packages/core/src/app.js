@@ -130,7 +130,7 @@ class App extends Module {
         : 'mouseup',
     };
 
-    // 加载use插入的模块类相关方法，Load Use Modules
+    // 加载use插入的模块类相关方法（如：create、get、destroy），Load Use Modules
     app.useModules();
 
     // 初始化数据，Init Data & Methods
