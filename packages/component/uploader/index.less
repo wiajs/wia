@@ -1,0 +1,129 @@
+.add-box {
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  color: #ddd;
+  border: 1px dotted #ddd;
+}
+
+.gallery {
+  display: none;
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background-color: #000;
+  z-index: 1000;
+
+  ._img {
+    position: absolute;
+    top: 0;
+    bottom: 60px;
+    width: 100%;
+    background: center center no-repeat;
+    background-size: contain;
+  }
+
+  ._opr {
+    position: absolute;
+    bottom: 0;
+    padding-bottom: 0;
+    background-color: #0d0d0d;
+    color: #fff;
+    width: 100vw;
+    line-height: 60px;
+    text-align: center;
+    a {
+      color: #fff;
+      i {
+        font-size: 22px;
+      }
+    }
+  }
+}
+
+.uploader {
+  height: 120px;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  // ._files {
+  //   display: flex;
+  //   justify-content: flex-start;
+  //   align-items: center;
+  //   padding-left: 0px;
+
+  ._file {
+    margin-right: 8px;
+    // margin-bottom: 8px;
+    width: 86px;
+    height: 86px;
+    background: no-repeat center center;
+    background-size: cover;
+    ._content {
+      position: absolute;
+      color: #fff;
+      i {
+        font-size: 26px;
+        color: red;
+      }
+    }
+  }
+  // }
+
+  ._status {
+    position: relative;
+    &:before {
+      content: ' ';
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+    }
+  }
+
+  // 带+号文件选择按钮
+  ._input {
+    position: relative;
+    margin-right: 8px;
+    // margin-bottom: 8px;
+    width: 86px;
+    height: 86px;
+    box-sizing: border-box;
+    background-color: #ededed;
+
+    &:before,
+    &:after {
+      content: ' ';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: #a3a3a3;
+    }
+
+    &:before {
+      width: 2px;
+      height: 32px;
+    }
+
+    &:after {
+      width: 32px;
+      height: 2px;
+    }
+  }
+
+  .attach-box {
+    border-radius: 7px;
+    width: 60px;
+    height: 60px;
+    color: #ddd;
+    border: 1px dotted #ddd;
+    i {
+      font-size: 38px;
+    }
+  }
+}
