@@ -284,6 +284,21 @@ $.isNumeric = function(val) {
     false
   );
 };
+
+$.contains = document.documentElement.contains ?
+	function(parent, node) {
+		return parent !== node && parent.contains(node)
+	} :
+	function(parent, node) {
+		while (node && (node = node.parentNode))
+			if (node === parent) return true
+		return false
+	}
+
+$.funcArg = function(context, arg, idx, payload) {
+  return isFunction(arg) ? arg.call(context, idx, payload) : arg
+}
+
 $.trim = function(str) {
   return str == null ? '' : String.prototype.trim.call(str);
 };
@@ -574,6 +589,30 @@ $.urlParam = function(url) {
   }
   return query;
 };
+
+// "true"  => true
+// "false" => false
+// "null"  => null
+// "42"    => 42
+// "42.5"  => 42.5
+// "08"    => "08"
+// JSON    => parse if valid
+// String  => self
+$.deserializeValue = function(value) {
+	try {
+		return value ?
+			value == "true" ||
+			( value == "false" ? false :
+				value == "null" ? null :
+				+value + "" == value ? +value :
+				/^[\[\{]/.test(value) ? JSON.parse(value) :
+				value )
+			: value
+	} catch(e) {
+		return value
+	}
+}
+
 
 $.ready = document.ready;
 $.fn = D.prototype;
