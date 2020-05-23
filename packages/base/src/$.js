@@ -95,15 +95,22 @@ class D {
     });
   }
 
-  toggleClass(className) {
+	/**
+	 * Add or remove classes from the given element.
+	 * @param {string} value - The classes to be toggled.
+	 * @param {boolean} add - Add only.
+	 */
+	toggleClass(className, add) {
     const classes = className.split(' ');
     for (let i = 0; i < classes.length; i += 1) {
       for (let j = 0; j < this.length; j += 1) {
         if (
           typeof this[j] !== 'undefined' &&
           typeof this[j].classList !== 'undefined'
-        )
-          this[j].classList.toggle(classes[i]);
+        ) {
+					if (arguments.length === 1) this[j].classList.toggle(classes[i]);
+          else add ? this[j].classList.add(classes[i]) : this[j].classList.remove(classes[i]);
+				}
       }
     }
     return this;
@@ -284,6 +291,8 @@ $.isNumeric = function(val) {
     false
   );
 };
+
+$.isNumber = $.isNumeric;
 
 $.contains = document.documentElement.contains ?
 	function(parent, node) {
