@@ -34,7 +34,6 @@
  */
 
 import Compress from '@wiajs/core/lib/img/compress';
-import {newFileName} from '@wiajs/core/util/tool';
 
 const parseError = xhr => {
   let msg = '';
@@ -202,6 +201,7 @@ export default class Uploader {
     // 点击选择文件
     if (opt.choose) {
       opt.choose.click(ev => {
+        // console.log('choose click', {ev});
         this.chooseFile();
       });
     }

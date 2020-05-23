@@ -1,0 +1,22 @@
+<nav class="bar bar-tab">
+  <a id="btnTrash" class="tab-item external" href="javascript:;">
+    <span class="icon icon-remove"></span>
+    <span class="tab-label">删除</span>
+  </a>
+  <a id="btnCrop" class="tab-item external" href="javascript:crop();">
+    <span class="icon icon-check"></span>
+    <span class="tab-label">裁剪</span>
+  </a>
+</nav>
+<!-- 这里是页面内容区 -->
+<div id="dvCrop" class="content native-scroll" style="background-color: white">
+  <!--拖动图片的外层div-->
+  <div id="dvCropImg" class="cropImgDiv">
+    <!--需要拖动的图片-->
+    <img id="imgCrop" class="cropImg" src="">
+  </div>
+
+  <div id="spCrop" style="text-align: center; margin-top: 6rem; display: none">
+    <span>正在上传图片,请稍等 。。。</span>
+  </div>
+</div>
