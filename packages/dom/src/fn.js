@@ -87,7 +87,7 @@ function prop(props, value) {
 function data(key, value) {
   let R;
   let el;
-  const attrName = 'data-' + name.replace(/([A-Z])/g, '-$1').toLowerCase();
+  const attrName = 'data-' + key.replace(/([A-Z])/g, '-$1').toLowerCase();
 
   if (typeof value === 'undefined') {
     el = this[0];
@@ -531,28 +531,32 @@ function outerHeight(includeMargins) {
 
 // 兼容 jQuery，dom7 是错误的 
 function offset(coordinates) {
-	if (coordinates) return this.each(function(index){
+  if (coordinates)
+    return this.each(function (index) {
 		var $this = $(this),
 				coords = $.funcArg(this, coordinates, index, $this.offset()),
 				parentOffset = $this.offsetParent().offset(),
 				props = {
 					top:  coords.top  - parentOffset.top,
-					left: coords.left - parentOffset.left
-  }
+          left: coords.left - parentOffset.left,
+        };
 
-		if ($this.css('position') == 'static') props['position'] = 'relative'
-		$this.css(props)
-	})
-	if (!this.length) return null
-	if (document.documentElement !== this[0] && !$.contains(document.documentElement, this[0]))
-		return {top: 0, left: 0}
-	var obj = this[0].getBoundingClientRect()
+      if ($this.css('position') == 'static') props['position'] = 'relative';
+      $this.css(props);
+    });
+  if (!this.length) return null;
+  if (
+    document.documentElement !== this[0] &&
+    !$.contains(document.documentElement, this[0])
+  )
+    return {top: 0, left: 0};
+  var obj = this[0].getBoundingClientRect();
     return {
 		left: obj.left + window.pageXOffset,
 		top: obj.top + window.pageYOffset,
 		width: Math.round(obj.width),
-		height: Math.round(obj.height)
-	}
+    height: Math.round(obj.height),
+  };
   }
 
 function hide() {
@@ -585,7 +589,10 @@ function styles() {
   if (this[0]) return window.getComputedStyle(this[0], null);
   return {};
 }
+
 function css(props, value) {
+  const REGEXP_SUFFIX = /^width|height|left|top|marginLeft|marginTop$/;
+
   let i;
   if (arguments.length === 1) {
     if (typeof props === 'string') {
@@ -595,7 +602,10 @@ function css(props, value) {
       for (i = 0; i < this.length; i += 1) {
         // eslint-disable-next-line
         for (let prop in props) {
-          this[i].style[prop] = props[prop];
+          let val = props[prop];
+          if (REGEXP_SUFFIX.test(prop) && $.isNumber(val)) val = `${val}px`;
+
+          this[i].style[prop] = val;
         }
       }
       return this;
@@ -603,7 +613,10 @@ function css(props, value) {
   }
   if (arguments.length === 2 && typeof props === 'string') {
     for (i = 0; i < this.length; i += 1) {
-      this[i].style[props] = value;
+      let val = value;
+      if (REGEXP_SUFFIX.test(props) && $.isNumber(val)) val = `${val}px`;
+
+      this[i].style[props] = val;
     }
     return this;
   }
@@ -1012,7 +1025,7 @@ function siblings(selector) {
 }
 
 /**
- * 所有符合条件的父元素
+ * 所有dom符合条件的父元素
  */
 function parent(selector) {
   const parents = []; // eslint-disable-line
@@ -1049,16 +1062,52 @@ function parents(selector) {
 }
 
 /**
+ * 从当前元素的父元素开始沿 DOM 树向上,获得匹配选择器的第一个祖先元素。
+ * 选择器为空，则返回 空
+ */
+function parentNode(selector) {
+  const parents = []; // eslint-disable-line
+
+  if (typeof selector === 'undefined') return new Dom([]);
+
+  for (let i = 0; i < this.length; i += 1) {
+    let parent = this[i].parentNode; // eslint-disable-line
+    while (parent) {
+      if ($(parent).is(selector)) {
+        parents.push(parent);
+        break;
+      }
+
+      parent = parent.parentNode;
+    }
+  }
+  return $($.uniq(parents));
+}
+
+/**
  * 从当前元素开始沿 DOM 树向上,获得匹配选择器的第一个祖先元素。
+ * 选择器为空，则返回 空
  */
 function closest(selector) {
   let closest = this; // eslint-disable-line
-  if (typeof selector === 'undefined') {
+  if (typeof selector === 'undefined') return new Dom([]);
+
+  if (!closest.is(selector)) {
+    const parents = []; // eslint-disable-line
+
+    for (let i = 0; i < this.length; i += 1) {
+      let parent = this[i].parentNode; // eslint-disable-line
+      while (parent) {
+        const n = $(parent);
+        if (n.is(selector)) return n;
+
+        parent = parent.parentNode;
+      }
+    }
+
     return new Dom([]);
   }
-  if (!closest.is(selector)) {
-    closest = closest.parents(selector).eq(0);
-  }
+
   return closest;
 }
 
@@ -1078,22 +1127,52 @@ function find(selector) {
 }
 
 /**
- * 返回被选元素的所有直接子元素，不包括文本节点
+ * 后代中单个适合选择器的元素
+ * @param {*} selector
+ */
+function findNode(selector) {
+  const foundElements = [];
+  for (let i = 0; i < this.length; i += 1) {
+    const found = this[i].querySelector(selector);
+    foundElements.push(found);
+  }
+  return new Dom(foundElements);
+}
+
+/**
+ * 返回所有dom的所有符合条件的直接子元素，不包括文本节点
  * @param {*} selector
  */
 function children(selector) {
   const cs = []; // eslint-disable-line
   for (let i = 0; i < this.length; i += 1) {
-    const childNodes = this[i].childNodes;
+    const childs = this[i].children;
 
-    for (let j = 0; j < childNodes.length; j += 1) {
+    for (let j = 0; j < childs.length; j += 1) {
       if (!selector) {
-        if (childNodes[j].nodeType === 1) cs.push(childNodes[j]);
-      } else if (
-        childNodes[j].nodeType === 1 &&
-        $(childNodes[j]).is(selector)
-      ) {
-        cs.push(childNodes[j]);
+        cs.push(childs[j]);
+      } else if ($(childs[j]).is(selector)) cs.push(childs[j]);
+    }
+  }
+  return new Dom($.uniq(cs));
+}
+
+/**
+ * 返回被选元素的第一个符合条件子元素，不包括文本节点
+ * @param {*} selector
+ */
+function childNode(selector) {
+  const cs = []; // eslint-disable-line
+  for (let i = 0; i < this.length; i += 1) {
+    const childs = this[i].children;
+
+    for (let j = 0; j < childs.length; j += 1) {
+      if (!selector) {
+        cs.push(childs[j]);
+        break;
+      } else if ($(childs[j]).is(selector)) {
+        cs.push(childs[j]);
+        break;
       }
     }
   }
@@ -1169,55 +1248,6 @@ function lastChild() {
 function childCount() {
   if (!this.dom) return 0;
   return this.dom.children.length;
-}
-
-/**
- * 返回的上级节点名称的元素节点，可用closest替代
- * ff parentNode 会返回 空 节点
- * ff textNode节点 没有 tagName
- */
-function upperTag(tag) {
-  let RC = null;
-
-  if (!this.dom) return null;
-
-  const tg = tag.toUpperCase();
-
-  let nd = this.dom;
-  while (nd) {
-    if (nd.tagName && nd.tagName.toUpperCase() === tg) {
-      RC = nd;
-      break;
-    }
-    nd = nd.parentNode;
-  }
-  return RC;
-}
-
-/**
- * 获取 指定 tagName的直接子元素，不含文本节点，可用 child替代
- * @param tag
- * @returns {*}
- */
-function childTag(tag) {
-  let RC = null;
-
-  if (!this.dom) return null;
-
-  try {
-    for (let i = 0, len = this.dom.children.length; i < len; i++) {
-      const nd = this.dom.children[i];
-
-      if (nd.tagName && nd.tagName.toUpperCase() === tag.toUpperCase()) {
-        RC = nd;
-        break;
-      }
-    }
-  } catch (e) {
-    alert(`childTag exp:${e.message}`);
-  }
-
-  return RC;
 }
 
 /**
@@ -1451,6 +1481,7 @@ export {
   prevAll,
   siblings,
   parent,
+  parentNode,
   parents,
   closest,
   qu,
@@ -1472,13 +1503,13 @@ export {
   qc as class,
   qcs as classes,
   find,
+  findNode,
   hasChild,
   children,
+  childNode,
   firstChild,
   lastChild,
   childCount,
-  upperTag,
-  childTag,
   cursorEnd,
   getCursorPos,
   getCursorPosition,
