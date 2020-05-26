@@ -591,7 +591,7 @@ function styles() {
 }
 
 function css(props, value) {
-  const REGEXP_SUFFIX = /^width|height|left|top|marginLeft|marginTop$/;
+  const REGEXP_SUFFIX = /^width|height|left|top|marginLeft|marginTop|paddingLeft|paddingTop$/;
 
   let i;
   if (arguments.length === 1) {
@@ -870,6 +870,8 @@ function insertBefore(selector) {
       }
     }
   }
+
+  return this;
 }
 
 /**
@@ -889,6 +891,8 @@ function insertAfter(selector) {
       }
     }
   }
+
+  return this;
 }
 
 /**

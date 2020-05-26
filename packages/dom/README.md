@@ -1,4 +1,4 @@
-English | [��������](./README.CN.md)
+English | [Chinese](./README.CN.md)
 
 # Wia Dom
 
