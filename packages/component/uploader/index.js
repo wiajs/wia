@@ -73,13 +73,14 @@ export default class Uploader {
       url: '',
       page: $('.page-current'), // 用于添加大图预览
       el: $('.uploader'), // 预览层
-      multiple: true,
-      limit: 0,
+      multiple: true, // 同时选择多个文件
+      limit: 0, // 0 不限制数量
       upload: true,
       accept: '*',
       compress: true,
-      quality: 0.5,
+      quality: 0.5, // 压缩比
       preview: true, // 是否预览
+      aspectRatio: 0, // 宽高比
 
       headers: {},
       data: {},
@@ -160,6 +161,7 @@ export default class Uploader {
   }
 
   bind(opt) {
+    const self = this;
     // ontouchstart/addEventListener 有时无法触发文件选择
     // opt.input.dom.onclick = ev => {
     //   this.chooseFile();
@@ -193,7 +195,15 @@ export default class Uploader {
         ev.preventDefault();
         const file = $(ev.target).closest('._file');
         if (file.length > 0) {
-          this.showGallery(file);
+          const f = this.getFile(file.data('id'));
+          // 进入裁剪页面
+          if (f?.status === 'crop' && this.opt.crop)
+            $.go(this.opt.crop, {
+              id: f.id,
+              url: f.url,
+              aspectRatio: this.opt.aspectRatio,
+            });
+          else this.showGallery(file);
         } else this.chooseFile();
       });
     }
@@ -216,8 +226,7 @@ export default class Uploader {
       });
 
       this.gallery.name('delete').click(ev => {
-        const file = this.gallery.class('_img').attr('file');
-        const id = file.replace('img', '');
+        const id = this.gallery.class('_img').data('id');
         this.remove(id);
       });
     }
@@ -228,7 +237,7 @@ export default class Uploader {
       this.gallery
         .class('_img')
         .attr('style', file.attr('style'))
-        .attr('file', file.attr('name'));
+        .data('id', file.data('id'));
       this.gallery.show();
     }
     // $gallery.fadeIn(100);
@@ -289,19 +298,41 @@ export default class Uploader {
 
     this._callHook('change', this.files);
     if (this.opt.preview) this.preview();
-    this.opt.upload && this.upload();
 
     return true;
+  }
+
+  getFile(id) {
+    return this.files.find(f => f.id == id);
+  }
+
+  /**
+   * 裁剪后，替换文件
+   * @param {*} url
+   * @param {*} canvas
+   */
+  async replace(id, canvas) {
+    const file = this.files.find(f => f.id == id);
+    if (file && canvas) {
+      file.status = 'croped';
+      file.canvas = canvas;
+      file.blob = await toBlob(canvas);
+      file.ext = '.jpg';
+      file.rawFile = null;
+      file.url = canvas.toDataURL('image/jpeg');
+      file.size = file.blob.size;
+      this.preview();
+    }
   }
 
   /**
    * 添加图片到附件框
    * @param {file} file
    */
-  preview() {
+  async preview() {
     // const fs = this.files.filter(f => f.status === 'choose');
     if (this.files && this.files.length > 0) {
-      this.files.forEach(f => {
+      this.files.forEach(async f => {
         let src;
         let tp;
         if (f.status === 'choose') {
@@ -309,31 +340,61 @@ export default class Uploader {
           const url = window.URL || window.webkitURL || window.mozURL;
           src = url && f.rawFile && url.createObjectURL(f.rawFile);
           tp =
-            '<div name="img#id#" class="flex-center _file _status" style="background-image: url(#url#);">' +
+            '<div name="img#id#" data-id="#id#" class="flex-center _file _status" style="background-image: url(#url#);">' +
+            '<div class="_content">50%</div></div>';
+
+          // 指定宽高比
+          if (this.opt.aspectRatio) {
+            const img = await loadImg(src);
+            if (
+              Math.round((img.naturalWidth * 100) / img.naturalHeight) / 100 !==
+              this.opt.aspectRatio
+            ) {
+              f.status = 'crop';
+              f.img = img;
+              f.url = src;
+              tp =
+                '<div name="img#id#" data-id="#id#" class="flex-center _file _status" style="background-image: url(#url#);">' +
+                '<div class="flext-center _content"><i class="icon iconfont iconjinggao"></i</div></div>';
+            }
+          }
+        } else if (f.status === 'croped') {
+          this.opt.el.name(`img${f.id}`).remove();
+          f.status = 'preview';
+          src = f.url;
+          tp =
+            '<div name="img#id#" data-id="#id#" class="flex-center _file _status" style="background-image: url(#url#);">' +
             '<div class="_content">50%</div></div>';
         } else if (f.status === 'upload') {
           const n = this.opt.el.name(`img${f.id}`);
           if (n.length === 0) src = `${f.host}/${f.dir}/${f.file}`;
           tp =
-            '<div name="img#id#" class="flex-center _file" style="background-image: url(#url#);"></div>';
+            '<div name="img#id#" data-id="#id#" class="flex-center _file" style="background-image: url(#url#);"></div>';
         }
 
         if (src) {
-          $(tp.replace('#id#', f.id).replace('#url#', src)).insertBefore(
+          $(tp.replace(/#id#/gi, f.id).replace('#url#', src)).insertBefore(
             this.opt.input
           );
 
           this._callHook('preview', f, this.files);
+          this.opt.upload && this.upload();
         }
       });
     }
   }
 
   compress(file, cb) {
-    if (!file || file.compress || file.status === 'upload') return;
+    if (
+      !file ||
+      file.compress ||
+      file.status === 'upload' ||
+      file.status === 'crop'
+    )
+      return;
 
     const self = this;
-    const press = new Compress(file.rawFile, {
+    const press = new Compress(file.blob || file.rawFile, {
       quality: this.opt.quality,
       success(r) {
         // The third parameter is required for server
@@ -400,9 +461,14 @@ export default class Uploader {
       const target = this.files.find(
         item => item.id === file.id || item.id === file
       );
-      target && target.status !== 'upload' && this.prePost(target);
+      target &&
+        target.status !== 'upload' &&
+        target.status !== 'crop' &&
+        this.prePost(target);
     } else {
-      const fs = this.files.filter(f => f.status !== 'upload');
+      const fs = this.files.filter(
+        f => f.status !== 'upload' && f.status !== 'crop'
+      );
 
       fs.forEach(f => {
         this.prePost(f);
@@ -545,6 +611,29 @@ export default class Uploader {
     $(this.input).remove();
     this.gallery.remove();
   }
+}
+
+function toBlob(canvas) {
+  return new Promise((res, rej) => {
+    try {
+      canvas.toBlob(blob => res(blob), 'image/jpeg'); // default 0.92
+    } catch (ex) {
+      rej(ex.message);
+    }
+  });
+}
+
+function loadImg(url) {
+  return new Promise((res, rej) => {
+    // 不能使用页面中的img,页面中的img会压缩图片，得不到图片真实大小!
+    const img = new Image();
+    img.src = url;
+    if (img.complete) {
+      res(img);
+    } else {
+      img.onload = () => res(img);
+    }
+  });
 }
 
 function getHeaders(headers) {

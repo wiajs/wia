@@ -67,28 +67,6 @@ export function toArray(value) {
   return Array.from ? Array.from(value) : slice.call(value);
 }
 
-/**
- * Iterate the given data.
- * @param {*} data - The data to iterate.
- * @param {Function} callback - The process function for each element.
- * @returns {*} The original data.
- */
-export function forEach(data, callback) {
-  if (data && $.isFunction(callback)) {
-    if (Array.isArray(data) || $.isNumber(data.length) /* array-like */) {
-      toArray(data).forEach((value, key) => {
-        callback.call(data, value, key, data);
-      });
-    } else if (isObject(data)) {
-      Object.keys(data).forEach(key => {
-        callback.call(data, data[key], key, data);
-      });
-    }
-  }
-
-  return data;
-}
-
 const REGEXP_DECIMALS = /\.\d*(?:0|9){12}\d*$/;
 
 /**

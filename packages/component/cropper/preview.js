@@ -1,5 +1,5 @@
 import {DATA_PREVIEW} from './constant';
-import {forEach, getTransforms} from './util';
+import {getTransforms} from './util';
 
 export default {
   initPreview() {
@@ -25,21 +25,26 @@ export default {
     let previews = preview;
 
     if (typeof preview === 'string') {
-      previews = el.ownerDocument.querySelectorAll(preview);
+      previews = $(el)
+        .parentNode('.page-content')
+        .dom.querySelectorAll(preview);
     } else if (preview.querySelector) {
       previews = [preview];
     }
 
     this.previews = previews;
 
-    forEach(previews, el => {
+    $.forEach(previews, n => {
+      const $n = $(n);
+      $n.css('height', 0);
+
       const img = document.createElement('img');
 
       // Save the original size for recover
-      $(el).data(DATA_PREVIEW, {
-        width: el.offsetWidth,
-        height: el.offsetHeight,
-        html: el.innerHTML,
+      $n.data(DATA_PREVIEW, {
+        width: n.offsetWidth,
+        height: n.offsetHeight,
+        html: n.innerHTML,
       });
 
       if (crossOrigin) {
@@ -65,22 +70,23 @@ export default {
         'max-height:none!important;' +
         'image-orientation:0deg!important;"';
 
-      el.innerHTML = '';
-      el.appendChild(img);
+      $n.html('');
+      $n.append(img);
     });
   },
 
   resetPreview() {
-    forEach(this.previews, element => {
-      const data = $(element).data(DATA_PREVIEW);
+    $.forEach(this.previews, n => {
+      const $n = $(n);
+      const data = $n.data(DATA_PREVIEW);
 
-      $(element).css({
+      $n.css({
         width: data.width,
         height: data.height,
       });
 
-      element.innerHTML = data.html;
-      $(element).removeData(DATA_PREVIEW);
+      n.innerHTML = data.html;
+      $n.removeData(DATA_PREVIEW);
     });
   },
 
@@ -113,11 +119,13 @@ export default {
       )
     );
 
-    forEach(this.previews, element => {
-      const data = $(element).data(DATA_PREVIEW);
+    // 根据 preview 宽度，计算高度，缺省宽度 100%
+    $.forEach(this.previews, n => {
+      const $n = $(n);
+      const data = $n.data(DATA_PREVIEW);
       const originalWidth = data.width;
       const originalHeight = data.height;
-      let newWidth = originalWidth;
+      // let newWidth = originalWidth;
       let newHeight = originalHeight;
       let ratio = 1;
 
@@ -126,20 +134,19 @@ export default {
         newHeight = cropBoxHeight * ratio;
       }
 
-      if (cropBoxHeight && newHeight > originalHeight) {
-        ratio = originalHeight / cropBoxHeight;
-        newWidth = cropBoxWidth * ratio;
-        newHeight = originalHeight;
-      }
+      // 宽度不变，高度变
+      // if (cropBoxHeight && newHeight > originalHeight) {
+      //   ratio = originalHeight / cropBoxHeight;
+      //   newWidth = cropBoxWidth * ratio;
+      //   newHeight = originalHeight;
+      // }
 
-      $(element).setStyle({
-        width: newWidth,
+      $n.css({
+        // width: newWidth,
         height: newHeight,
       });
 
-      $(element)
-        .findNode('img')
-        .css(
+      $n.findNode('img').css(
           $.assign(
             {
               width: width * ratio,

@@ -106,22 +106,34 @@ img {
 ```
 
 ```js
-// import 'cropperjs/dist/cropper.css';
-import Cropper from 'cropperjs';
+import Cropper from '@wiajs/component/cropper';
 
-const image = document.getElementById('image');
-const cropper = new Cropper(image, {
-  aspectRatio: 16 / 9,
-  crop(event) {
-    console.log(event.detail.x);
-    console.log(event.detail.y);
-    console.log(event.detail.width);
-    console.log(event.detail.height);
-    console.log(event.detail.rotate);
-    console.log(event.detail.scaleX);
-    console.log(event.detail.scaleY);
-  },
+function init(pg, param) {
+  const img = _.name('img');
+
+  if (_cropper) {
+    if (param && param.url) _cropper.replace(param.url);
+  } else {
+    img.dom.src = param?.url ?? img.dom.src;
+    _cropper = new Cropper($.app, {
+      aspectRatio: param?.aspectRatio ?? 1, // 宽高比
+      autoCropArea: 1,
+      el: img.dom,
+      viewMode: 3,
+      preview: '.preview',
+      // data: {width: image.dom.width},
+      // data: {
+      //   width: (minCroppedWidth + maxCroppedWidth) / 2,
+      //   height: (minCroppedHeight + maxCroppedHeight) / 2,
+      // },
+    });
+
+    _cropper.on('crop', (el, data) => {
+      console.log('crop', {el, data});
+      // _.name('data').text(JSON.stringify(data));
 });
+  }
+}
 ```
 
 #### FAQ

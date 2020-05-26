@@ -12,7 +12,7 @@ import {
   ACTION_WEST,
   CLASS_HIDDEN,
 } from './constant';
-import {forEach, getOffset} from './util';
+import {getOffset} from './util';
 
 function change(event) {
   const {opt, canvasData, containerData, cropBoxData, pointers} = this;
@@ -433,7 +433,7 @@ function change(event) {
         break;
       }
 
-      offset = getOffset(this.cropper);
+      offset = getOffset(this.cropper.dom);
       left = pointer.startX - offset.left;
       top = pointer.startY - offset.top;
       width = cropBoxData.minWidth;
@@ -475,7 +475,7 @@ function change(event) {
   }
 
   // Override
-  forEach(pointers, p => {
+  $.forEach(pointers, p => {
     p.startX = p.endX;
     p.startY = p.endY;
   });

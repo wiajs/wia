@@ -375,7 +375,7 @@ export default class Cropper extends Event {
     }
 
     // 触发组件事件
-    this.emit(`local::${EVENT_READY} cropper${EVENT_READY}`);
+    this.emit(`local::${EVENT_READY} cropper${EVENT_READY}`, el);
 
     // dispatchEvent(el, EVENT_READY);
   }
@@ -388,7 +388,7 @@ export default class Cropper extends Event {
     this.ready = false;
     this.unbind();
     this.resetPreview();
-    this.cropper.parentNode.removeChild(this.cropper);
+    this.cropper.remove();
     $(this.el).removeClass(CLASS_HIDDEN);
   }
 

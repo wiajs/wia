@@ -487,7 +487,11 @@ export default {
   output() {
     this.preview();
     // 触发组件事件
-    this.emit(`local::${EVENT_CROP} cropper${EVENT_CROP}`, this.getData());
+    this.emit(
+      `local::${EVENT_CROP} cropper${EVENT_CROP}`,
+      this.el,
+      this.getData()
+    );
 
     // dispatchEvent(this.element, EVENT_CROP, this.getData());
   },

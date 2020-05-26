@@ -12,7 +12,6 @@ import {
 } from './constant';
 
 import {
-  forEach,
   getAdjustedSizes,
   getPointersCenter,
   getSourceCanvas,
@@ -95,8 +94,8 @@ export default {
         if (this.ready) {
           this.viewBoxImage.src = url;
 
-          forEach(this.previews, element => {
-            element.getElementsByTagName('img')[0].src = url;
+          $.forEach(this.previews, n => {
+            n.getElementsByTagName('img')[0].src = url;
           });
         }
       } else {
@@ -117,7 +116,7 @@ export default {
   enable() {
     if (this.ready && this.disabled) {
       this.disabled = false;
-      removeClass(this.cropper, CLASS_DISABLED);
+      this.cropper.removeClass(CLASS_DISABLED);
     }
 
     return this;
@@ -208,7 +207,7 @@ export default {
    */
   getData(rounded = false) {
     const {opt, imageData, canvasData, cropBoxData} = this;
-    let data;
+    let data = {};
 
     if (this.ready && this.cropped) {
       data = {
@@ -220,9 +219,10 @@ export default {
 
       const ratio = imageData.width / imageData.naturalWidth;
 
-      forEach(data, (n, i) => {
+      $.forEach(data, (n, i) => {
         data[i] = n / ratio;
       });
+      data.ratio = ratio;
 
       if (rounded) {
         // In case rounding off leads to extra 1px in right or bottom border
@@ -306,7 +306,7 @@ export default {
     const data = {};
 
     if (this.ready) {
-      forEach(
+      $.forEach(
         ['left', 'top', 'width', 'height', 'naturalWidth', 'naturalHeight'],
         n => {
           data[n] = canvasData[n];

@@ -11,7 +11,7 @@ import {
   EVENT_CROP_START,
   REGEXP_ACTIONS,
 } from './constant';
-import {forEach, getPointer} from './util';
+import {getPointer} from './util';
 
 export default {
   resize() {
@@ -36,12 +36,12 @@ export default {
 
       if (opt.restore) {
         this.setCanvasData(
-          forEach(canvasData, (n, i) => {
+          $.forEach(canvasData, (n, i) => {
             canvasData[i] = n * ratio;
           })
         );
         this.setCropBoxData(
-          forEach(cropBoxData, (n, i) => {
+          $.forEach(cropBoxData, (n, i) => {
             cropBoxData[i] = n * ratio;
           })
         );
@@ -80,7 +80,7 @@ export default {
 
     if (event.changedTouches) {
       // Handle touch event
-      forEach(event.changedTouches, touch => {
+      $.forEach(event.changedTouches, touch => {
         pointers[touch.identifier] = getPointer(touch);
       });
     } else {
@@ -102,6 +102,7 @@ export default {
 
     // 触发组件事件
     this.emit(`local::${EVENT_CROP_START} cropper${EVENT_CROP_START}`, {
+      el: this.el,
       originalEvent: event,
       action,
     });
@@ -142,6 +143,7 @@ export default {
 
     // 触发组件事件
     this.emit(`local::${EVENT_CROP_MOVE} cropper${EVENT_CROP_MOVE}`, {
+      el: this.el,
       originalEvent: event,
       action,
     });
@@ -156,7 +158,7 @@ export default {
     // }
 
     if (event.changedTouches) {
-      forEach(event.changedTouches, touch => {
+      $.forEach(event.changedTouches, touch => {
         // The first parameter should not be undefined (#432)
         $.assign(pointers[touch.identifier] || {}, getPointer(touch, true));
       });
@@ -175,7 +177,7 @@ export default {
     const {action, pointers} = this;
 
     if (event.changedTouches) {
-      forEach(event.changedTouches, touch => {
+      $.forEach(event.changedTouches, touch => {
         delete pointers[touch.identifier];
       });
     } else {
@@ -199,6 +201,7 @@ export default {
 
     // 触发组件事件
     this.emit(`local::${EVENT_CROP_END} cropper${EVENT_CROP_END}`, {
+      el: this.el,
       originalEvent: event,
       action,
     });

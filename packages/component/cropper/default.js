@@ -53,7 +53,7 @@ export default {
   autoCropArea: 0.8,
 
   // Enable to move the image
-  movable: true,
+  movable: false, // true,
 
   // Enable to move the crop box
   cropBoxMovable: true,

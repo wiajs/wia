@@ -20,24 +20,25 @@
 
 然后，我们可以根据需求，大概设计出想要的API效果，再根据API推导出内部实现。
 
-#### 可通过配置实例化
+### 使用
 
-```javascript
-const uploader = new Uploader({
-  url: '',
-  // 用于自动添加input标签的容器
-  wrapper: null,
+```js
+_uploader = new Uploader({
+  upload: true, // 自动上传
+  url: _url, // 上传网址
+  dir: 'star/etrip/demo', // 图片存储路径，格式: 所有者/应用名称/分类
+  el: pg.class('uploader'), // 组件容器
+  input: pg.name('avatar'), // 上传成功后的url填入输入框，便于提交
+  choose: pg.name('choose'), // 点击触发选择文件，可选，多文件时，可不填
   
-  // 配置化的功能，多选、接受文件类型、自动上传等等
-  multiple: true,
-  accept: '*',
-  limit: -1, // 文件个数
-  autoUpload: false
+  multiple: false, // 可否同时选择多个文件
+  limit: 1, // 文件数限制 0 不限，1 则限制单个文件，如 头像
+  accept: 'image/jpg,image/jpeg,image/png,image/gif', // 选择文件类型
+  compress: true, // 自动压缩
+  quality: 0.5, // 压缩比
   
   // xhr配置
-  header: {}, // 适用于JWT校验
-  data: {} // 添加额外参数
-  withCredentials: false
+  data: {}, // 添加到请求头的内容
 });
 ```
 
@@ -56,29 +57,33 @@ uploader
   .on('progress', e => {
     // 回传上传进度
   })
-  .on('success', ret => {/*...*/})
-  .on('error', ret => {/*...*/})
+  .on('success', ret => {
+    /*...*/
+  })
+  .on('error', ret => {
+    /*...*/
+  });
 ```
 
 #### 外部调用方法
 
 这里主要暴露一些可能通过交互才触发的功能，如选择文件、手动上传等
 
-```javascript
-uploader.chooseFile();
-
-// 独立出添加文件函数，方便拓展
-// 可传入slice大文件后的数组、拖拽添加文件
-uploader.loadFiles(files);
-
-// 相关操作
-uploader.removeFile(file);
-uploader.clearFiles()
+- chooseFile()
+  选择文件，需在点击交互中触发
+- replace()
+  替换当前文件，裁剪时需要用裁剪后的文件替换当前未裁剪文件
+- loadFiles(files);
+  独立出添加文件函数，方便拓展
+  可传入 slice 大文件后的数组、拖拽添加文件
+- removeFile(file)
+- remove(id)
+- clear()
+  清除
 
 // 凡是涉及到动态添加dom，事件绑定
 // 应该提供销毁API
 uploader.destroy();
-```
 
 至此，可以大概设计完我们想要的uploader的大致效果，接着根据API进行内部实现。
 
@@ -130,10 +135,10 @@ class Uploader {
 
       headers: {},
       data: {},
-      withCredentials: false
-    }
-    this.setting = Object.assign(defaultOption, option)
-    this._init()
+      withCredentials: false,
+    };
+    this.setting = Object.assign(defaultOption, option);
+    this._init();
   }
 }
 ```
@@ -199,9 +204,9 @@ this.changeHandler = e => {
 
 ```javascript
 uploader.on('choose', files => {
-  const overSize = [].some.call(files, item => item.size > 1024 * 1024 * 10)
+  const overSize = [].some.call(files, item => item.size > 1024 * 1024 * 10);
   if (overSize) {
-    setTips('有文件超出大小限制')
+    setTips('有文件超出大小限制');
     return false;
   }
   return files;
@@ -236,14 +241,15 @@ class Uploader {
 传进来文件列表参数，判断个数响应事件，其次就是要封装出内部列表的数据格式，方便追踪状态和对应对象，这里我们要用一个外部变量生成id，再根据`autoUpload`参数选择是否自动上传。
 
 ```javascript
-let uid = 1
+let uid = 1;
 
 class Uploader {
   // ...
   loadFiles (files) {
     if (!files) return false;
 
-    if (this.limit !== -1 && 
+    if (
+      this.limit !== -1 &&
         files.length && 
         files.length + this.uploadFiles.length > this.limit
     ) {
@@ -251,20 +257,22 @@ class Uploader {
       return false;
     }
     // 构建约定的数据格式
-    this.uploadFiles = this.uploadFiles.concat([].map.call(files, file => {
+    this.uploadFiles = this.uploadFiles.concat(
+      [].map.call(files, file => {
       return {
         uid: uid++,
         rawFile: file,
         fileName: file.name,
         size: file.size,
-        status: 'ready'
-      }
-    }))
+          status: 'ready',
+        };
+      })
+    );
 
     this._callHook('change', this.uploadFiles);
-    this.setting.autoUpload && this.upload()
+    this.setting.autoUpload && this.upload();
 
-    return true
+    return true;
   }
 }
 ```
@@ -346,27 +354,27 @@ class Uploader {
   // ...
   chooseFile () {
     // 每次都需要清空value,否则同一文件不触发change
-    this.input.value = ''
-    this.input.click()
+    this.input.value = '';
+    this.input.click();
   }
   
   removeFile (file) {
-    const id = file.id || file
-    const index = this.uploadFiles.findIndex(item => item.id === id)
+    const id = file.id || file;
+    const index = this.uploadFiles.findIndex(item => item.id === id);
     if (index > -1) {
-      this.uploadFiles.splice(index, 1)
+      this.uploadFiles.splice(index, 1);
       this._callHook('change', this.uploadFiles);
     }
   }
 
   clear () {
-    this.uploadFiles = []
+    this.uploadFiles = [];
     this._callHook('change', this.uploadFiles);
   }
   
   destroy () {
-    this.input.removeEventHandler('change', this.changeHandler)
-    this.setting.wrapper.removeChild(this.input)
+    this.input.removeEventHandler('change', this.changeHandler);
+    this.setting.wrapper.removeChild(this.input);
   }
   // ...
 }
@@ -447,14 +455,14 @@ post (file) {
 
 ```javascript
 const parseSuccess = xhr => {
-  let response = xhr.responseText
+  let response = xhr.responseText;
   if (response) {
     try {
-      return JSON.parse(response)
+      return JSON.parse(response);
     } catch (error) {}
   }
-  return response
-}
+  return response;
+};
 ```
 
 ##### parseError
@@ -463,22 +471,22 @@ const parseSuccess = xhr => {
 
 ```javascript
 const parseError = xhr => {
-  let msg = ''
-  let { responseText, responseType, status, statusText } = xhr
+  let msg = '';
+  let {responseText, responseType, status, statusText} = xhr;
   if (!responseText && responseType === 'text') {
     try {
-      msg = JSON.parse(responseText)
+      msg = JSON.parse(responseText);
     } catch (error) {
-      msg = responseText
+      msg = responseText;
     }
   } else {
-    msg = `${status} ${statusText}`
+    msg = `${status} ${statusText}`;
   }
 
-  const err = new Error(msg)
-  err.status = status
-  return err
-}
+  const err = new Error(msg);
+  err.status = status;
+  return err;
+};
 ```
 
 #### 拓展拖拽上传
@@ -489,7 +497,6 @@ const parseError = xhr => {
 2. 监听dragover事件，并执行`preventDefault()`，防止浏览器弹窗。
 
 ##### 更改客户端代码如下：
-
 
 ![](https://user-gold-cdn.xitu.io/2020/3/1/1709622ef252bcf7?w=974&h=808&f=png&s=98062)
 
