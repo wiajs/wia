@@ -57,19 +57,28 @@ class D {
     return d instanceof D;
   }
 
-  // Classes and attributes
-  addClass(className) {
+  /**
+   * Add classes to the given element.
+   * @param {string} value - The classes to be add.
+   * @param {boolean} only - Delete all the styles in the same layer, used by tab
+   */
+  addClass(className, only) {
     if (typeof className === 'undefined') {
       return this;
     }
     const classes = className.split(' ');
     for (let i = 0; i < classes.length; i += 1) {
       for (let j = 0; j < this.length; j += 1) {
-        if (
-          typeof this[j] !== 'undefined' &&
-          typeof this[j].classList !== 'undefined'
-        )
-          this[j].classList.add(classes[i]);
+        const n = this[j];
+        if (typeof n !== 'undefined' && typeof n.classList !== 'undefined') {
+          if (arguments.length === 1) n.classList.add(classes[i]);
+          else if (only) {
+            // clear all
+            $('.' + classes[i], n.parentNode).removeClass(classes[i]);
+            // add one
+            n.classList.add(classes[i]);
+          }
+        }
       }
     }
     return this;
@@ -98,7 +107,7 @@ class D {
 	/**
 	 * Add or remove classes from the given element.
 	 * @param {string} value - The classes to be toggled.
-	 * @param {boolean} add - Add only.
+   * @param {boolean} add - add or remove.
 	 */
 	toggleClass(className, add) {
     const classes = className.split(' ');
@@ -109,7 +118,10 @@ class D {
           typeof this[j].classList !== 'undefined'
         ) {
 					if (arguments.length === 1) this[j].classList.toggle(classes[i]);
-          else add ? this[j].classList.add(classes[i]) : this[j].classList.remove(classes[i]);
+          else
+            add
+              ? this[j].classList.add(classes[i])
+              : this[j].classList.remove(classes[i]);
 				}
       }
     }
@@ -294,19 +306,18 @@ $.isNumeric = function(val) {
 
 $.isNumber = $.isNumeric;
 
-$.contains = document.documentElement.contains ?
-	function(parent, node) {
-		return parent !== node && parent.contains(node)
-	} :
-	function(parent, node) {
-		while (node && (node = node.parentNode))
-			if (node === parent) return true
-		return false
+$.contains = document.documentElement.contains
+  ? function (parent, node) {
+      return parent !== node && parent.contains(node);
 	}
+  : function (parent, node) {
+      while (node && (node = node.parentNode)) if (node === parent) return true;
+      return false;
+    };
 
 $.funcArg = function(context, arg, idx, payload) {
-  return isFunction(arg) ? arg.call(context, idx, payload) : arg
-}
+  return isFunction(arg) ? arg.call(context, idx, payload) : arg;
+};
 
 $.trim = function(str) {
   return str == null ? '' : String.prototype.trim.call(str);
@@ -340,6 +351,19 @@ $.each = function(els, cb) {
 
   return els;
 };
+
+$.forEach = function (els, cb) {
+  var i, key;
+  if (likeArray(els)) {
+    for (i = 0; i < els.length; i++)
+      if (cb.call(els[i], els[i], i) === false) return els;
+  } else {
+    for (key in els) if (cb.call(els[key], els[key], key) === false) return els;
+  }
+
+  return els;
+};
+
 $.grep = function(els, cb) {
   return filter.call(els, cb);
 };
@@ -565,6 +589,7 @@ $.uniq = function(array) {
   });
 };
 
+// two params promisify
 $.promisify = function(f) {
   return (...arg) =>
     new Promise((res, rej) => {
@@ -572,6 +597,20 @@ $.promisify = function(f) {
         if (err) rej(err);
         else res(rs);
       });
+    });
+};
+
+// one param promisify
+$.promise = function (f) {
+  return (...arg) =>
+    new Promise((res, rej) => {
+      try {
+        f(...arg, rs => {
+          res(rs);
+        });
+      } catch (ex) {
+        rej(ex.message);
+      }
     });
 };
 
@@ -609,19 +648,22 @@ $.urlParam = function(url) {
 // String  => self
 $.deserializeValue = function(value) {
 	try {
-		return value ?
-			value == "true" ||
-			( value == "false" ? false :
-				value == "null" ? null :
-				+value + "" == value ? +value :
-				/^[\[\{]/.test(value) ? JSON.parse(value) :
-				value )
-			: value
-	} catch(e) {
 		return value
+      ? value == 'true' ||
+          (value == 'false'
+            ? false
+            : value == 'null'
+            ? null
+            : +value + '' == value
+            ? +value
+            : /^[\[\{]/.test(value)
+            ? JSON.parse(value)
+            : value)
+      : value;
+	} catch(e) {
+    return value;
 	}
-}
-
+};
 
 $.ready = document.ready;
 $.fn = D.prototype;
