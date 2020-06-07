@@ -789,7 +789,7 @@ function index() {
  */
 function eq(index) {
   if (typeof index === 'undefined') return this;
-  const length = this.length;
+  const {length} = this;
   let returnIndex;
   if (index > length - 1) {
     return new Dom([]);
@@ -801,6 +801,8 @@ function eq(index) {
   }
   return new Dom([this[index]]);
 }
+
+// 添加参数节点到当前节点的最后
 function append(...args) {
   let newChild;
 
@@ -812,6 +814,7 @@ function append(...args) {
         tempDiv.innerHTML = newChild;
         while (tempDiv.firstChild) {
           this[i].appendChild(tempDiv.firstChild);
+          tempDiv.removeChild(tempDiv.firstChild);
         }
       } else if (newChild instanceof Dom) {
         for (let j = 0; j < newChild.length; j += 1) {
@@ -825,11 +828,49 @@ function append(...args) {
 
   return this;
 }
-// eslint-disable-next-line
-function appendTo(parent) {
-  $(parent).append(this);
+function insertChild(el, ch) {
+  if (el.children.length) el.insertBefore(ch, el.children[0]);
+  else el.appendChild(ch);
+}
+// 添加参数节点到当节点的最前
+function insert(...args) {
+  let newChild;
+
+  for (let k = 0; k < args.length; k += 1) {
+    newChild = args[k];
+    for (let i = 0; i < this.length; i += 1) {
+      if (typeof newChild === 'string') {
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = newChild;
+        while (tempDiv.lastChild) {
+          insertChild(this[i], tempDiv.lastChild);
+          tempDiv.removeChild(tempDiv.lastChild);
+        }
+      } else if (newChild instanceof Dom) {
+        for (let j = 0; j < newChild.length; j += 1) {
+          insertChild(this[i], newChild[j]);
+        }
+      } else {
+        insertChild(this[i], newChild);
+      }
+    }
+  }
+
   return this;
 }
+
+// 添加当前节点到参数节点的最后
+function appendTo(el) {
+  $(el).append(this);
+  return this;
+}
+
+// 添加当前节点到参数节点的最前
+function insertTo(el) {
+  $(el).insert(this);
+  return this;
+}
+
 function prepend(newChild) {
   let i;
   let j;
@@ -926,7 +967,7 @@ function nextNode(selector) {
   if (!el) return new Dom([]);
 	
   let next = el.nextElementSibling; // eslint-disable-line
-  while (el.nextElementSibling) {
+  while (next) {
     if (selector) {
       if ($(next).is(selector)) {
 				nextEls.push(next);
@@ -1473,6 +1514,8 @@ export {
   eq,
   append,
   appendTo,
+  insert,
+  insertTo,
   prepend,
   prependTo,
   insertBefore,
