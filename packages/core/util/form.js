@@ -37,6 +37,7 @@ function setField(fm, k, v) {
   if ($n.length > 0) {
     const n = $n.dom;
     console.log('setForm', {type: n.type});
+    v = v ?? '';
 
     if (n.type === 'text' || n.type === 'date') $n.val(v);
     else if (n.type === 'hidden') {
