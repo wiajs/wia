@@ -20,17 +20,17 @@ var emptyArray = [],
   fragmentRE = /^\s*<(\w+|!)[^>]*>/,
   uniqueNumber = 1;
 
-document.ready = function(cb) {
+document.ready = function (cb) {
   // don't use "interactive" on IE <= 10 (it can fired premature)
   if (
     document.readyState === 'complete' ||
     (document.readyState !== 'loading' && !document.documentElement.doScroll)
   )
-    setTimeout(function() {
+    setTimeout(function () {
       cb($);
     }, 0);
   else {
-    var handler = function() {
+    var handler = function () {
       document.removeEventListener('DOMContentLoaded', handler, false);
       window.removeEventListener('load', handler, false);
       cb($);
@@ -99,17 +99,17 @@ class D {
   }
 
   hasClass(name) {
-    return emptyArray.some.call(this, function(el) {
+    return emptyArray.some.call(this, function (el) {
       return el.classList.contains(name);
     });
   }
 
-	/**
-	 * Add or remove classes from the given element.
-	 * @param {string} value - The classes to be toggled.
+  /**
+   * Add or remove classes from the given element.
+   * @param {string} value - The classes to be toggled.
    * @param {boolean} add - add or remove.
-	 */
-	toggleClass(className, add) {
+   */
+  toggleClass(className, add) {
     const classes = className.split(' ');
     for (let i = 0; i < classes.length; i += 1) {
       for (let j = 0; j < this.length; j += 1) {
@@ -117,12 +117,12 @@ class D {
           typeof this[j] !== 'undefined' &&
           typeof this[j].classList !== 'undefined'
         ) {
-					if (arguments.length === 1) this[j].classList.toggle(classes[i]);
+          if (arguments.length === 1) this[j].classList.toggle(classes[i]);
           else
             add
               ? this[j].classList.add(classes[i])
               : this[j].classList.remove(classes[i]);
-				}
+        }
       }
     }
     return this;
@@ -143,7 +143,7 @@ function likeArray(obj) {
 }
 
 function compact(array) {
-  return filter.call(array, function(item) {
+  return filter.call(array, function (item) {
     return item != null;
   });
 }
@@ -178,7 +178,7 @@ function fragment(html, name, properties) {
     if (!(name in containers)) name = '*';
     const container = document.createElement(containers[name]);
     container.innerHTML = '' + html;
-    R = $.each(slice.call(container.childNodes), function() {
+    R = $.each(slice.call(container.childNodes), function () {
       container.removeChild(this);
     });
   }
@@ -251,47 +251,47 @@ function $(sel, ctx) {
 // plugin compatibility
 $.uuid = 0;
 $.expr = {};
-$.noop = function() {};
+$.noop = function () {};
 $.support = support;
 
 // 静态属性,可直接调用
-$.type = function(obj) {
+$.type = function (obj) {
   return obj == null ? String(obj) : class2type[toString.call(obj)] || 'object';
 };
 // eslint-disable-next-line func-names
-$.isWindow = function(o) {
+$.isWindow = function (o) {
   return o != null && o == o.window;
 };
-$.isObject = function(o) {
+$.isObject = function (o) {
   return $.type(o) === 'object'; // && o !== null && o.constructor && o.constructor === Object;
 };
-$.isFunction = function(value) {
+$.isFunction = function (value) {
   return $.type(value) === 'function';
 };
-$.isDocument = function(o) {
+$.isDocument = function (o) {
   return o != null && o.nodeType == o.DOCUMENT_NODE;
 };
-$.isPlainObject = function(o) {
+$.isPlainObject = function (o) {
   return (
     $.isObject(o) &&
     !$.isWindow(o) &&
     Object.getPrototypeOf(o) == Object.prototype
   );
 };
-$.isEmptyObject = function(o) {
+$.isEmptyObject = function (o) {
   var name;
   for (name in o) return false;
   return true;
 };
 $.isArray =
   Array.isArray ||
-  function(object) {
+  function (object) {
     return object instanceof Array;
   };
-$.inArray = function(elem, array, i) {
+$.inArray = function (elem, array, i) {
   return emptyArray.indexOf.call(array, elem, i);
 };
-$.isNumeric = function(val) {
+$.isNumeric = function (val) {
   var num = Number(val),
     type = typeof val;
   return (
@@ -309,20 +309,20 @@ $.isNumber = $.isNumeric;
 $.contains = document.documentElement.contains
   ? function (parent, node) {
       return parent !== node && parent.contains(node);
-	}
+    }
   : function (parent, node) {
       while (node && (node = node.parentNode)) if (node === parent) return true;
       return false;
     };
 
-$.funcArg = function(context, arg, idx, payload) {
+$.funcArg = function (context, arg, idx, payload) {
   return isFunction(arg) ? arg.call(context, idx, payload) : arg;
 };
 
-$.trim = function(str) {
+$.trim = function (str) {
   return str == null ? '' : String.prototype.trim.call(str);
 };
-$.map = function(els, cb) {
+$.map = function (els, cb) {
   var value,
     values = [],
     i,
@@ -340,7 +340,7 @@ $.map = function(els, cb) {
   return values;
 };
 
-$.each = function(els, cb) {
+$.each = function (els, cb) {
   var i, key;
   if (likeArray(els)) {
     for (i = 0; i < els.length; i++)
@@ -364,29 +364,29 @@ $.forEach = function (els, cb) {
   return els;
 };
 
-$.grep = function(els, cb) {
+$.grep = function (els, cb) {
   return filter.call(els, cb);
 };
 // Populate the class2type map
 $.each(
   'Boolean Number String Function Array Date RegExp Object Error'.split(' '),
-  function(i, name) {
+  function (i, name) {
     class2type['[object ' + name + ']'] = name.toLowerCase();
   }
 );
 
-$.id = function(x) {
+$.id = function (x) {
   return document.getElementById(x);
 };
 
-$.qu = function(sel, ctx) {
+$.qu = function (sel, ctx) {
   if (ctx)
     return D.isD(ctx) ? ctx[0].querySelector(sel) : ctx.querySelector(sel);
   return document.querySelector(sel);
 };
 
 // 返回数组, 便于 forEach
-$.qus = $.qsa = function(sel, ctx) {
+$.qus = $.qsa = function (sel, ctx) {
   var R = null;
   if (ctx)
     R = D.isD(ctx) ? ctx[0].querySelectorAll(sel) : ctx.querySelectorAll(sel);
@@ -408,7 +408,7 @@ $.qn = function qn(name, ctx) {
 
 // 返回指定name数组, 便于 forEach
 // 效率高于qus
-$.qns = function(sel, ctx) {
+$.qns = function (sel, ctx) {
   var R = null;
   if (ctx)
     R = D.isD(ctx) ? ctx[0].getElementsByName(sel) : ctx.getElementsByName(sel);
@@ -419,7 +419,7 @@ $.qns = function(sel, ctx) {
 
 // 返回指定class name数组, 便于 forEach
 // 效率高于qus
-$.qcs = function(sel, ctx) {
+$.qcs = function (sel, ctx) {
   var R = null;
   if (ctx)
     R = D.isD(ctx)
@@ -432,7 +432,7 @@ $.qcs = function(sel, ctx) {
 
 // 返回指定tag name数组, 便于 forEach
 // 效率高于qus
-$.qts = function(sel, ctx) {
+$.qts = function (sel, ctx) {
   var R = null;
   if (ctx)
     R = D.isD(ctx)
@@ -474,7 +474,7 @@ function assign(to, src, deep) {
  * Object.assign 在部分安卓上不兼容，并且不支持深拷贝
  * 第一个参数为 true，为深拷贝，
  */
-$.assign = function(to, ...srcs) {
+$.assign = function (to, ...srcs) {
   if (!to) return {};
   let deep;
   if (typeof to === 'boolean') {
@@ -487,7 +487,7 @@ $.assign = function(to, ...srcs) {
   return to;
 };
 $.extend = $.assign;
-$.merge = function(...args) {
+$.merge = function (...args) {
   const to = args[0];
   args.splice(0, 1);
   args.forEach(src => {
@@ -495,7 +495,7 @@ $.merge = function(...args) {
   });
   return to;
 };
-$.fastLink = function() {
+$.fastLink = function () {
   // a 标签加载 touchstart 事件,避免 300毫秒等待
   try {
     if (!$.support.touch) return;
@@ -525,7 +525,7 @@ $.fastLink = function() {
     alert(`fastLink exp: ${e.message}`);
   }
 };
-$.requestAnimationFrame = function(callback) {
+$.requestAnimationFrame = function (callback) {
   if (window.requestAnimationFrame)
     return window.requestAnimationFrame(callback);
   else if (window.webkitRequestAnimationFrame)
@@ -533,13 +533,13 @@ $.requestAnimationFrame = function(callback) {
   return window.setTimeout(callback, 1000 / 60);
 };
 
-$.cancelAnimationFrame = function(id) {
+$.cancelAnimationFrame = function (id) {
   if (window.cancelAnimationFrame) return window.cancelAnimationFrame(id);
   else if (window.webkitCancelAnimationFrame)
     return window.webkitCancelAnimationFrame(id);
   return window.clearTimeout(id);
 };
-$.deleteProps = function(obj) {
+$.deleteProps = function (obj) {
   const object = obj;
   Object.keys(object).forEach(key => {
     try {
@@ -555,42 +555,42 @@ $.deleteProps = function(obj) {
   });
 };
 
-$.nextTick = function(cb, delay = 0) {
+$.nextTick = function (cb, delay = 0) {
   return setTimeout(cb, delay);
 };
-$.nextFrame = function(cb) {
+$.nextFrame = function (cb) {
   return $.requestAnimationFrame(() => {
     $.requestAnimationFrame(cb);
   });
 };
-$.now = function() {
+$.now = function () {
   return Date.now();
 };
 
-$.uniqueNumber = function() {
+$.uniqueNumber = function () {
   uniqueNumber += 1;
   return uniqueNumber;
 };
 
-$.uid = function(mask = 'xxxxxxxxxx', map = '0123456789abcdef') {
+$.uid = function (mask = 'xxxxxxxxxx', map = '0123456789abcdef') {
   const {length} = map;
   return mask.replace(/x/g, () => map[Math.floor(Math.random() * length)]);
 };
 
-$.camelCase = function(str) {
+$.camelCase = function (str) {
   return str.toLowerCase().replace(/-+(.)/g, (match, chr) => {
     return chr ? chr.toUpperCase() : '';
   });
 };
 
-$.uniq = function(array) {
+$.uniq = function (array) {
   return filter.call(array, (item, idx) => {
     return array.indexOf(item) === idx;
   });
 };
 
 // two params promisify
-$.promisify = function(f) {
+$.promisify = function (f) {
   return (...arg) =>
     new Promise((res, rej) => {
       f(...arg, (err, rs) => {
@@ -614,7 +614,7 @@ $.promise = function (f) {
     });
 };
 
-$.urlParam = function(url) {
+$.urlParam = function (url) {
   const query = {};
   let urlToParse = url || window.location.href;
   let i;
@@ -646,9 +646,9 @@ $.urlParam = function(url) {
 // "08"    => "08"
 // JSON    => parse if valid
 // String  => self
-$.deserializeValue = function(value) {
-	try {
-		return value
+$.deserializeValue = function (value) {
+  try {
+    return value
       ? value == 'true' ||
           (value == 'false'
             ? false
@@ -660,9 +660,9 @@ $.deserializeValue = function(value) {
             ? JSON.parse(value)
             : value)
       : value;
-	} catch(e) {
+  } catch (e) {
     return value;
-	}
+  }
 };
 
 $.ready = document.ready;
