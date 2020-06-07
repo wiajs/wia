@@ -71,7 +71,6 @@ export default class Uploader {
 
     const defaultOption = {
       url: '',
-      page: $('.page-current'), // 用于添加大图预览
       el: $('.uploader'), // 预览层
       multiple: true, // 同时选择多个文件
       limit: 0, // 0 不限制数量
@@ -96,8 +95,7 @@ export default class Uploader {
     this.files = [];
 
     this.input = this.initInput(opt);
-
-    if (opt.preview) this.gallery = this.initGallery(opt);
+    this.page = opt.el.parentNode('.page');
 
     this.bind(opt);
   }
@@ -139,9 +137,13 @@ export default class Uploader {
     return el;
   }
 
-  initGallery(opt) {
+  getGallery() {
+    if (!this.opt.preview) return null;
+      
+    let gal = this.page.class('gallery');
+    if (!gal || !gal.length) {
     const tmpl = `
-  <div class="gallery">
+  <div class="gallery" style="display: none;">
     <span class="_img"></span>
     <div class="flex-center _opr">
       <a href="javascript:;" name="delete">
@@ -150,18 +152,29 @@ export default class Uploader {
     </div>
   </div>`;
 
-    let gal = opt.page.class('gallery');
-    if (gal.length === 0) {
       gal = $(tmpl);
-      gal.insertBefore(opt.page.class('page-content'));
-    }
+      gal.insertBefore(this.page.class('page-content'));      
+      // 图片预览
+      gal.click(ev => {
+        ev.stopPropagation(); // 阻止冒泡，避免上层 choose再次触发
+        ev.preventDefault();
+        gal.hide();
+        // $gallery.fadeOut(100);
+      });
 
-    gal = opt.page.class('gallery');
+      gal.name('delete').click(ev => {
+        const id = gal.class('_img').data('id');
+        this.remove(id);
+      });
+
+      gal = this.page.class('gallery');
+      this.gallery = gal;
+    }
     return gal;
   }
 
   bind(opt) {
-    const self = this;
+    // const self = this;
     // ontouchstart/addEventListener 有时无法触发文件选择
     // opt.input.dom.onclick = ev => {
     //   this.chooseFile();
@@ -197,7 +210,7 @@ export default class Uploader {
         if (file.length > 0) {
           const f = this.getFile(file.data('id'));
           // 进入裁剪页面
-          if (f?.status === 'crop' && this.opt.crop)
+          if (f && f.status === 'crop' && this.opt.crop)
             $.go(this.opt.crop, {
               id: f.id,
               url: f.url,
@@ -215,30 +228,19 @@ export default class Uploader {
         this.chooseFile();
       });
     }
-
-    // 图片预览
-    if (opt.preview) {
-      this.gallery.click(ev => {
-        ev.stopPropagation(); // 阻止冒泡，避免上层 choose再次触发
-        ev.preventDefault();
-        this.gallery.hide();
-        // $gallery.fadeOut(100);
-      });
-
-      this.gallery.name('delete').click(ev => {
-        const id = this.gallery.class('_img').data('id');
-        this.remove(id);
-      });
-    }
   }
 
   showGallery(file) {
     if (file.length > 0) {
-      this.gallery
+      const gal = this.getGallery();
+
+      if (gal.length) {
+        gal
         .class('_img')
         .attr('style', file.attr('style'))
         .data('id', file.data('id'));
-      this.gallery.show();
+        gal.show();
+      }
     }
     // $gallery.fadeIn(100);
   }
