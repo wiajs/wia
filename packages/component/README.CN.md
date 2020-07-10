@@ -31,7 +31,7 @@ function init(pg)
     upload: true, // 自动上传
     url: _url, // 上传网址
     dir: 'star/etrip/demo', // 图片存储路径，格式: 所有者/应用名称/分类
-    el: pg.class('uploader'), // 组件容器
+    el: pg.clas('uploader'), // 组件容器
     input: pg.name('avatar'), // 上传成功后的url填入输入框，便于提交
     choose: pg.name('choose'), // 点击触发选择文件
 

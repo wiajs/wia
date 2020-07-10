@@ -7,12 +7,12 @@ export default function (parameters = {}) {
       defaultSelector,
       constructor,
       app,
-      domProp: 'wiaModal',
+      domProp: 'f7Modal',
     }),
     {
       open(el, animate) {
         const $el = $(el);
-        let instance = $el[0].wiaModal;
+        let instance = $el[0].f7Modal;
         if (!instance)
           instance = new constructor(app, {el: $el});
         return instance.open(animate);
@@ -21,7 +21,7 @@ export default function (parameters = {}) {
         const $el = $(el);
         if ($el.length === 0)
           return undefined;
-        let instance = $el[0].wiaModal;
+        let instance = $el[0].f7Modal;
         if (!instance)
           instance = new constructor(app, {el: $el});
         return instance.close(animate);

@@ -75,7 +75,7 @@ async function make(dir, act = 'build') {
       console.log('wiafile make getFile', {dir, rs, act});
 
       if (!_.isEmpty(rs)) {
-      R = rs.update || {};
+        R = rs.update || {};
         if (act === 'build') rs = {local: rs, wia: r && r.pub ? r.pub : {}};
         else rs = {pub: rs, local: r && r.local ? r.local : {}};
         console.log('wiafile', {dir, rs, act});

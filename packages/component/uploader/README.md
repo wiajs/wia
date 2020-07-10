@@ -1,14 +1,14 @@
 ### 前言
 
-本文将带你基于ES6的面向对象，脱离框架使用原生JS，从设计到代码实现一个Uploader基础类，再到实际投入使用。
+本文将带你基于 ES6 的面向对象，脱离框架使用原生 JS，从设计到代码实现一个 Uploader 基础类，再到实际投入使用。
 
 ### 需求描述
 
 相信很多人都用过/写过上传的逻辑，无非就是创建`input[type=file]`标签，监听`onchange`事件，添加到`FormData`发起请求。
 
-但是，想引入开源的工具时觉得**增加了许多体积且定制性不满足**，每次写上传逻辑又会写很多**冗余性代码**。在不同的toC业务上，还要重新编写自己的上传组件样式。
+但是，想引入开源的工具时觉得**增加了许多体积且定制性不满足**，每次写上传逻辑又会写很多**冗余性代码**。在不同的 toC 业务上，还要重新编写自己的上传组件样式。
 
-此时编写一个Uploader基础类，供于业务组件二次封装，就显得很有必要。
+此时编写一个 Uploader 基础类，供于业务组件二次封装，就显得很有必要。
 
 下面我们来分析下使用场景与功能：
 
@@ -18,7 +18,7 @@
 - **提供上传状态反馈，如：上传中的进度、上传成功/失败。**
 - **可用于拓展更多功能，如：拖拽上传、图片预览、大文件分片等。**
 
-然后，我们可以根据需求，大概设计出想要的API效果，再根据API推导出内部实现。
+然后，我们可以根据需求，大概设计出想要的 API 效果，再根据 API 推导出内部实现。
 
 ### 使用
 
@@ -27,16 +27,16 @@ _uploader = new Uploader({
   upload: true, // 自动上传
   url: _url, // 上传网址
   dir: 'star/etrip/demo', // 图片存储路径，格式: 所有者/应用名称/分类
-  el: pg.class('uploader'), // 组件容器
+  el: pg.clas('uploader'), // 组件容器
   input: pg.name('avatar'), // 上传成功后的url填入输入框，便于提交
   choose: pg.name('choose'), // 点击触发选择文件，可选，多文件时，可不填
-  
+
   multiple: false, // 可否同时选择多个文件
   limit: 1, // 文件数限制 0 不限，1 则限制单个文件，如 头像
   accept: 'image/jpg,image/jpeg,image/png,image/gif', // 选择文件类型
   compress: true, // 自动压缩
   quality: 0.5, // 压缩比
-  
+
   // xhr配置
   data: {}, // 添加到请求头的内容
 });
@@ -81,39 +81,39 @@ uploader
 - clear()
   清除
 
-// 凡是涉及到动态添加dom，事件绑定
-// 应该提供销毁API
+// 凡是涉及到动态添加 dom，事件绑定
+// 应该提供销毁 API
 uploader.destroy();
 
-至此，可以大概设计完我们想要的uploader的大致效果，接着根据API进行内部实现。
+至此，可以大概设计完我们想要的 uploader 的大致效果，接着根据 API 进行内部实现。
 
 ### 内部实现
 
-使用ES6的class构建uploader类，把功能进行内部方法拆分，使用下划线开头标识内部方法。
+使用 ES6 的 class 构建 uploader 类，把功能进行内部方法拆分，使用下划线开头标识内部方法。
 
 然后可以给出以下大概的内部接口：
 
 ```javascript
 class Uploader {
   // 构造器，new的时候，合并默认配置
-  constructor (option = {}) {}
+  constructor(option = {}) {}
   // 根据配置初始化，绑定事件
-  _init () {}
-  
+  _init() {}
+
   // 绑定钩子与触发
-  on (evt) {}
-  _callHook (evt) {}
-  
+  on(evt) {}
+  _callHook(evt) {}
+
   // 交互方法
-  chooseFile () {}
-  loadFiles (files) {}
-  removeFile (file) {}
-  clear () {}
-  
+  chooseFile() {}
+  loadFiles(files) {}
+  removeFile(file) {}
+  clear() {}
+
   // 上传处理
-  upload (file) {}
+  upload(file) {}
   // 核心ajax发起请求
-  _post (file) {}
+  _post(file) {}
 }
 ```
 
@@ -123,7 +123,7 @@ class Uploader {
 
 ```javascript
 class Uploader {
-  constructor (option = {}) {
+  constructor(option = {}) {
     const defaultOption = {
       url: '',
       // 若无声明wrapper, 默认为body元素
@@ -145,7 +145,7 @@ class Uploader {
 
 #### 初始化 init
 
-这里初始化做了几件事：维护一个内部文件数组`uploadFiles`，构建`input`标签，绑定`input`标签的事件，挂载dom。
+这里初始化做了几件事：维护一个内部文件数组`uploadFiles`，构建`input`标签，绑定`input`标签的事件，挂载 dom。
 
 为什么需要用一个数组去维护文件，因为从需求上看，我们的每个文件需要一个状态去追踪，所以我们选择内部维护一个数组，而不是直接将文件对象交给上层逻辑。
 
@@ -154,7 +154,7 @@ class Uploader {
 ```javascript
 class Uploader {
   // ...
-  
+
   init () {
     this.uploadFiles = [];
     this.input = this._initInputElement(this.setting);
@@ -183,10 +183,10 @@ class Uploader {
 
 看完上面的实现，有两点需要说明一下：
 
-1. 为了考虑到`destroy()`的实现，我们需要在`this`属性上暂存`input`标签与绑定的事件。后续方便直接取来，解绑事件与去除dom。
-2. 其实把`input`事件函数`changeHandler`单独抽离出去也可以，更方便维护。但是会有this指向问题，因为handler里我们希望将this指向本身实例，若抽离出去就需要使用`bind`绑定一下当前上下文。
+1. 为了考虑到`destroy()`的实现，我们需要在`this`属性上暂存`input`标签与绑定的事件。后续方便直接取来，解绑事件与去除 dom。
+2. 其实把`input`事件函数`changeHandler`单独抽离出去也可以，更方便维护。但是会有 this 指向问题，因为 handler 里我们希望将 this 指向本身实例，若抽离出去就需要使用`bind`绑定一下当前上下文。
 
-上文中的`changeHanler`，来单独分析实现，这里我们要读取文件，响应实例choose事件，将文件列表作为参数传递给`loadFiles`。
+上文中的`changeHanler`，来单独分析实现，这里我们要读取文件，响应实例 choose 事件，将文件列表作为参数传递给`loadFiles`。
 
 为了更加贴合业务需求，可以通过事件返回结果来判断是中断，还是进入下一流程。
 
@@ -215,19 +215,19 @@ uploader.on('choose', files => {
 
 #### 状态事件绑定与响应
 
-简单实现上文提到的`_callHook`，将事件挂载在实例属性上。因为要涉及到单个choose事件结果控制。没有按照标准的发布/订阅模式的事件中心来做，有兴趣的同学可以看看[tiny-emitter](https://github.com/scottcorgan/tiny-emitter)的实现。
+简单实现上文提到的`_callHook`，将事件挂载在实例属性上。因为要涉及到单个 choose 事件结果控制。没有按照标准的发布/订阅模式的事件中心来做，有兴趣的同学可以看看[tiny-emitter](https://github.com/scottcorgan/tiny-emitter)的实现。
 
 ```javascript
 class Uploader {
   // ...
-  on (evt, cb) {
+  on(evt, cb) {
     if (evt && typeof cb === 'function') {
       this['on' + evt] = cb;
     }
     return this;
   }
 
-  _callHook (evt, ...args) {
+  _callHook(evt, ...args) {
     if (evt && this['on' + evt]) {
       return this['on' + evt].apply(this, args);
     }
@@ -238,20 +238,20 @@ class Uploader {
 
 #### 装载文件列表 - loadFiles
 
-传进来文件列表参数，判断个数响应事件，其次就是要封装出内部列表的数据格式，方便追踪状态和对应对象，这里我们要用一个外部变量生成id，再根据`autoUpload`参数选择是否自动上传。
+传进来文件列表参数，判断个数响应事件，其次就是要封装出内部列表的数据格式，方便追踪状态和对应对象，这里我们要用一个外部变量生成 id，再根据`autoUpload`参数选择是否自动上传。
 
 ```javascript
 let uid = 1;
 
 class Uploader {
   // ...
-  loadFiles (files) {
+  loadFiles(files) {
     if (!files) return false;
 
     if (
       this.limit !== -1 &&
-        files.length && 
-        files.length + this.uploadFiles.length > this.limit
+      files.length &&
+      files.length + this.uploadFiles.length > this.limit
     ) {
       this._callHook('exceed', files);
       return false;
@@ -259,11 +259,11 @@ class Uploader {
     // 构建约定的数据格式
     this.uploadFiles = this.uploadFiles.concat(
       [].map.call(files, file => {
-      return {
-        uid: uid++,
-        rawFile: file,
-        fileName: file.name,
-        size: file.size,
+        return {
+          uid: uid++,
+          rawFile: file,
+          fileName: file.name,
+          size: file.size,
           status: 'ready',
         };
       })
@@ -284,7 +284,7 @@ class Uploader {
   // ...
   loadFiles (files) {
     if (!files) return false;
-    
+
 +   const type = Object.prototype.toString.call(files)
 +   if (type === '[object FileList]') {
 +     files = [].slice.call(files)
@@ -292,8 +292,8 @@ class Uploader {
 +     files = [files]
 +   }
 
-    if (this.limit !== -1 && 
-        files.length && 
+    if (this.limit !== -1 &&
+        files.length &&
         files.length + this.uploadFiles.length > this.limit
        ) {
       this._callHook('exceed', files);
@@ -352,13 +352,13 @@ upload (file) {
 ```javascript
 class Uploader {
   // ...
-  chooseFile () {
+  chooseFile() {
     // 每次都需要清空value,否则同一文件不触发change
     this.input.value = '';
     this.input.click();
   }
-  
-  removeFile (file) {
+
+  removeFile(file) {
     const id = file.id || file;
     const index = this.uploadFiles.findIndex(item => item.id === id);
     if (index > -1) {
@@ -367,12 +367,12 @@ class Uploader {
     }
   }
 
-  clear () {
+  clear() {
     this.uploadFiles = [];
     this._callHook('change', this.uploadFiles);
   }
-  
-  destroy () {
+
+  destroy() {
     this.input.removeEventHandler('change', this.changeHandler);
     this.setting.wrapper.removeChild(this.input);
   }
@@ -393,13 +393,13 @@ class Uploader {
 这个是比较关键的函数，我们用原生`XHR`实现，因为`fetch`并不支持`progress`事件。简单描述下要做的事：
 
 1. 构建`FormData`，将文件与配置中的`data`进行添加。
-2. 构建`xhr`，设置配置中的header、withCredentials，配置相关事件
+2. 构建`xhr`，设置配置中的 header、withCredentials，配置相关事件
 
-- onload事件：处理响应的状态，返回数据并改写文件列表中的状态，响应外部`change`等相关状态事件。
-- onerror事件：处理错误状态，改写文件列表，抛出错误，响应外部`error`事件
-- onprogress事件：根据返回的事件，计算好百分比，响应外部`onprogress`事件
+- onload 事件：处理响应的状态，返回数据并改写文件列表中的状态，响应外部`change`等相关状态事件。
+- onerror 事件：处理错误状态，改写文件列表，抛出错误，响应外部`error`事件
+- onprogress 事件：根据返回的事件，计算好百分比，响应外部`onprogress`事件
 
-3. 因为xhr的返回格式不太友好，我们需要额外编写两个函数处理http响应：`parseSuccess`、`parseError`
+3. 因为 xhr 的返回格式不太友好，我们需要额外编写两个函数处理 http 响应：`parseSuccess`、`parseError`
 
 ```javascript
 post (file) {
@@ -430,13 +430,13 @@ post (file) {
       this._callHook('success', parseSuccess(xhr), file, this.uploadFiles)
     }
   }
- 
+
   xhr.onerror = e => {
     /* 处理失败 */
     file.status = 'error'
     this._callHook('error', parseError(xhr), file, this.uploadFiles)
   }
- 
+
   xhr.upload.onprogress = e => {
     /* 处理上传进度 */
     const { total, loaded } = e
@@ -451,7 +451,7 @@ post (file) {
 
 ##### parseSuccess
 
-将响应体尝试JSON反序列化，失败的话再返回原样文本
+将响应体尝试 JSON 反序列化，失败的话再返回原样文本
 
 ```javascript
 const parseSuccess = xhr => {
@@ -467,7 +467,7 @@ const parseSuccess = xhr => {
 
 ##### parseError
 
-同样的，JSON反序列化，此处还要抛出个错误，记录错误信息。
+同样的，JSON 反序列化，此处还要抛出个错误，记录错误信息。
 
 ```javascript
 const parseError = xhr => {
@@ -493,14 +493,14 @@ const parseError = xhr => {
 
 拖拽上传注意两个事情就是
 
-1. 监听drop事件，获取`e.dataTransfer.files`
-2. 监听dragover事件，并执行`preventDefault()`，防止浏览器弹窗。
+1. 监听 drop 事件，获取`e.dataTransfer.files`
+2. 监听 dragover 事件，并执行`preventDefault()`，防止浏览器弹窗。
 
 ##### 更改客户端代码如下：
 
 ![](https://user-gold-cdn.xitu.io/2020/3/1/1709622ef252bcf7?w=974&h=808&f=png&s=98062)
 
-##### 效果图GIF
+##### 效果图 GIF
 
 ![](https://user-gold-cdn.xitu.io/2020/3/1/17096220e064c2ff?w=640&h=451&f=gif&s=2500732)
 
@@ -509,6 +509,6 @@ const parseError = xhr => {
 代码当中还存在不少需要的优化项以及争论项，等待各位读者去斟酌改良：
 
 - 文件大小判断是否应该结合到类里面？看需求，因为有时候可能会有根据`.zip`压缩包的文件，可以允许更大的体积。
-- 是否应该提供可重写ajax函数的配置项？
+- 是否应该提供可重写 ajax 函数的配置项？
 - 参数是否应该可传入一个函数动态确定？
 - ...

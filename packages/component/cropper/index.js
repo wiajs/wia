@@ -304,18 +304,18 @@ export default class Cropper extends Event {
 
     div.innerHTML = TEMPLATE;
 
-    const cropper = $(div).class(`${NAMESPACE}-container`);
-    const canvas = cropper.class(`${NAMESPACE}-canvas`);
-    const dragBox = cropper.class(`${NAMESPACE}-drag-box`);
-    const cropBox = $(cropper).class(`${NAMESPACE}-crop-box`);
-    const face = cropBox.class(`${NAMESPACE}-face`);
+    const cropper = $(div).clas(`${NAMESPACE}-container`);
+    const canvas = cropper.clas(`${NAMESPACE}-canvas`);
+    const dragBox = cropper.clas(`${NAMESPACE}-drag-box`);
+    const cropBox = $(cropper).clas(`${NAMESPACE}-crop-box`);
+    const face = cropBox.clas(`${NAMESPACE}-face`);
 
     this.container = container;
     this.cropper = cropper;
     this.canvas = canvas;
     this.dragBox = dragBox;
     this.cropBox = cropBox;
-    this.viewBox = cropper.class(`${NAMESPACE}-view-box`);
+    this.viewBox = cropper.clas(`${NAMESPACE}-view-box`);
     this.face = face;
 
     canvas.append(image);
@@ -340,11 +340,9 @@ export default class Cropper extends Event {
 
     cropBox.addClass(CLASS_HIDDEN);
 
-    if (!opt.guides)
-      cropBox.class(`${NAMESPACE}-dashed`).addClass(CLASS_HIDDEN);
+    if (!opt.guides) cropBox.clas(`${NAMESPACE}-dashed`).addClass(CLASS_HIDDEN);
 
-    if (!opt.center)
-      cropBox.class(`${NAMESPACE}-center`).addClass(CLASS_HIDDEN);
+    if (!opt.center) cropBox.clas(`${NAMESPACE}-center`).addClass(CLASS_HIDDEN);
 
     if (opt.background) cropper.addClass(`${NAMESPACE}-bg`);
 
@@ -356,8 +354,8 @@ export default class Cropper extends Event {
     }
 
     if (!opt.cropBoxResizable) {
-      cropBox.class(`${NAMESPACE}-line`).addClass(CLASS_HIDDEN);
-      cropBox.class(`${NAMESPACE}-point`).addClass(CLASS_HIDDEN);
+      cropBox.clas(`${NAMESPACE}-line`).addClass(CLASS_HIDDEN);
+      cropBox.clas(`${NAMESPACE}-point`).addClass(CLASS_HIDDEN);
     }
 
     this.render();

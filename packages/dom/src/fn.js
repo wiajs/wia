@@ -7,6 +7,7 @@
 const {Dom} = window.$;
 
 const emptyArray = [];
+const elementDisplay = {}; 
 
 function ready(cb) {
   if (/complete|loaded|interactive/.test(document.readyState) && document.body)
@@ -96,16 +97,16 @@ function data(key, value) {
       if (el.domElementDataStorage && key in el.domElementDataStorage) {
         R = el.domElementDataStorage[key];
       } else R = this.attr(attrName);
-      }
+    }
     if (R) R = $.deserializeValue(R);
   } else {
-  // Set value
-  for (let i = 0; i < this.length; i += 1) {
-    el = this[i];
-    if (!el.domElementDataStorage) el.domElementDataStorage = {};
-    el.domElementDataStorage[key] = value;
+    // Set value
+    for (let i = 0; i < this.length; i += 1) {
+      el = this[i];
+      if (!el.domElementDataStorage) el.domElementDataStorage = {};
+      el.domElementDataStorage[key] = value;
       this.attr(attrName, value);
-  }
+    }
     R = this;
   }
 
@@ -206,13 +207,22 @@ function transition(duration) {
   }
   return this;
 }
-// Events
+/**
+ * 事件响应
+ * targetSelector 参数一般很少用
+ * click 300ms late，use touch Trigger immediately
+ * swipe 滑动事件上下左右四个方向，滑动距离超过10px，则触发回调函数
+ * 触发回调函数，参数为 (ev, {x, y})，x y互斥，只有一个有值
+ * press 按压事件，超过 1秒，移动距离小于 5px，为 press 事件
+ */
 function on(...args) {
   let [eventType, targetSelector, listener, capture] = args;
+
   if (typeof args[1] === 'function') {
     [eventType, listener, capture] = args;
     targetSelector = undefined;
   }
+
   if (!capture) capture = false;
 
   function handleLiveEvent(e) {
@@ -232,13 +242,18 @@ function on(...args) {
     }
   }
 
-  // 事件响应，参数为 domEventData，而不是dom事件中的 event
-  function handleEvent(e) {
-    const eventData = e && e.target ? e.target.domEventData || [] : [];
-    if (eventData.indexOf(e) < 0) {
-      eventData.unshift(e);
+  // 事件响应，可通过el的domEventData 带额外参数，dom事件中的 event作为第一个参数
+  function handleEvent(...vs) {
+    const ds = vs[0]?.target?.domEventData ?? [];
+    const rs = [...vs, ...ds];
+
+    listener.apply(this, rs);
+
+    // 清除 domEventData 附加数据
+    if (vs[0]?.target?.domEventData) {
+      vs[0].target.domEventData = [];
+      delete vs[0].target.domEventData;
     }
-    listener.apply(this, eventData);
   }
 
   // Prevent duplicate clicks
@@ -268,50 +283,122 @@ function on(...args) {
   }
 
   // on 函数内共享闭包变量
-  let touchStartX;
-  let touchStartY;
-  function touchStart(ev) {
-    // ev.preventDefault();
-    touchStartX = ev.changedTouches[0].clientX;
-    touchStartY = ev.changedTouches[0].clientY;
+  const touch = {};
+  function touchStart(e) {
+    // ev.preventDefault(); // 默认行为为滚动屏幕
+    // touch.x = e.targetTouches[0].pageX; // pageX 相对文档的位置
+    touch.x = e.targetTouches[0].pageX; // targetTouches clientX 可见视口位置，pageX 文档位置
+    touch.y = e.targetTouches[0].pageY;
+    touch.el = $(e.target);
+    touch.top = touch.el.rect()?.top ?? 0;
+    touch.left = touch.el.rect()?.left ?? 0;
+    touch.time = new Date().getTime();
+    touch.trigger = false;
+    touch.scrollY = false;
+    const pg = touch.el.closest('.page-content').dom;
+    if (pg) {
+      touch.scrollY = true;
+      if (
+        pg.scrollTop === 0 ||
+        pg.scrollTop + pg.clientHeight === pg.scrollHeight
+      )
+        touch.scrollY = false;
+    }
   }
 
-  function touchEnd(ev) {
-    const x = Math.abs(ev.changedTouches[0].clientX - touchStartX);
-    const y = Math.abs(ev.changedTouches[0].clientY - touchStartY);
+  function touchMove(e) {
+    if (eventType !== 'swipe' || touch.trigger) return;
+
+    const x = Math.round(e.targetTouches[0].pageX - touch.x);
+    const y = Math.round(e.targetTouches[0].pageY - touch.y);
+    const top = Math.round((touch.el.rect()?.top ?? 0) - touch.top);
+    const left = Math.round((touch.el.rect()?.left ?? 0) - touch.left);
+
+    // 计算手指在屏幕上的滑动距离，减掉页面跟随手指滚动的距离
+    const mx = Math.abs(x - left);
+    const my = Math.abs(y - top);
+
+    // 页面不滚动，滑动超过12px，触发滑动事件，页面滚动则不触发
+    if (my > 15 && mx < 8 && top === 0 && !touch.scrollY) {
+      touch.trigger = true; // move 会反复触发，事件只触发一次
+      return handleEvent.call(this, e, {x: 0, y});
+    }
+
+    if (mx > 12 && my < 8 && left === 0 && top === 0) {
+      // ev.preventDefault(); // 不阻止后续的 onclick 事件，否则后续onclick 不会触发
+      touch.trigger = true; // move 会反复触发，事件只触发一次
+      return handleEvent.call(this, e, {x, y: 0});
+    }
+  }
+
+  // 同时具备 press click，需分开两个函数监听，触发两次，否则只能触发一次
+  function clickEnd(e) {
+    return touchEnd.call(this, e);
+  }
+
+  function pressEnd(e) {
+    return touchEnd.call(this, e);
+  }
+
+  function touchEnd(e) {
+    if (eventType !== 'click' && eventType !== 'press') return;
+    touch.trigger = false;
+    const x = Math.abs(e.changedTouches[0].pageX - touch.x);
+    const y = Math.abs(e.changedTouches[0].pageY - touch.y);
+    const tm = new Date().getTime() - touch.time;
     // console.log('dom touchEnd', {x, y});
     if (x <= 5 && y <= 5) {
-      // ev.preventDefault(); // 不阻止后续的 onclick 事件
-			return clickEvent.call(this, ev);
-		}
+      // ev.preventDefault(); // 不阻止后续的 onclick 事件，否则后续onclick 不会触发
+      if (tm < 500 && eventType === 'click') return clickEvent.call(this, e);
+      if (tm > 500 && eventType === 'press') return handleEvent.call(this, e);
+    }
   }
 
   const events = eventType.split(' ');
   let j;
   for (let i = 0; i < this.length; i += 1) {
     const el = this[i];
+    // 未设置目标选择器
     if (!targetSelector) {
       for (j = 0; j < events.length; j += 1) {
         let event = events[j];
         if (!el.domListeners) el.domListeners = {};
         if (!el.domListeners[event]) el.domListeners[event] = [];
 
-        // click 300ms late，use touch Trigger immediately
-        if (event === 'click' && $.support.touch) {
-          el.domListeners[event].push({
+        if (
+          $.support.touch &&
+          (event === 'click' || event === 'swipe' || event === 'press')
+        ) {
+          const lis = {
+            capture,
             listener,
-            proxyListener: [touchStart, touchEnd],
+            proxyListener: [touchStart],
+          };
+
+          let passive = capture;
+          if (event === 'swipe') {
+            if ($.support.passiveListener) passive = {passive: true, capture};
+            lis.proxyListener.push(touchMove);
+          } else if (event === 'click') lis.proxyListener.push(clickEnd);
+          else if (event === 'press') lis.proxyListener.push(pressEnd);
+
+          el.domListeners[event].push(lis);
+          lis.proxyListener.forEach(v => {
+            let type = v.name.toLowerCase();
+            if (type === 'clickend' || type === 'pressend') type = 'touchend';
+            el.addEventListener(type, v, passive);
           });
-          el.addEventListener('touchstart', touchStart, capture);
-          el.addEventListener('touchend', touchEnd, capture);
         } else if (event === 'click') {
           el.domListeners[event].push({
+            capture,
             listener,
             proxyListener: clickEvent,
           });
           el.addEventListener(event, clickEvent, capture);
         } else {
+          // 其他事件
           el.domListeners[event].push({
+            capture,
             listener,
             proxyListener: handleEvent,
           });
@@ -332,6 +419,7 @@ function on(...args) {
       }
     }
   }
+
   return this;
 }
 
@@ -357,20 +445,36 @@ function off(...args) {
       if (handlers && handlers.length) {
         for (let k = handlers.length - 1; k >= 0; k -= 1) {
           const handler = handlers[k]; // 事件响应对象数组
+          // 停止指定的响应函数
           if (listener && handler.listener === listener) {
-            if (event === 'click' && $.support.touch) {
+            if (
+              (event === 'click' || event === 'swipe' || event === 'press') &&
+              $.support.touch
+            ) {
               el.removeEventListener(
                 'touchstart',
                 handler.proxyListener[0],
-                capture
+                handler.capture
               );
-              el.removeEventListener(
-                'touchend',
-                handler.proxyListener[1],
-                capture
-              );
+
+              if (event === 'swipe')
+                el.removeEventListener(
+                  'touchmove',
+                  handler.proxyListener[1],
+                  handler.capture
+                );
+              else
+                el.removeEventListener(
+                  'touchend',
+                  handler.proxyListener[1],
+                  handler.capture
+                );
             } else
-              el.removeEventListener(event, handler.proxyListener, capture);
+              el.removeEventListener(
+                event,
+                handler.proxyListener,
+                handler.capture
+              );
             handlers.splice(k, 1);
           } else if (
             listener &&
@@ -378,10 +482,18 @@ function off(...args) {
             handler.listener.domproxy &&
             handler.listener.domproxy === listener
           ) {
-            el.removeEventListener(event, handler.proxyListener, capture);
+            el.removeEventListener(
+              event,
+              handler.proxyListener,
+              handler.capture
+            );
             handlers.splice(k, 1);
           } else if (!listener) {
-            el.removeEventListener(event, handler.proxyListener, capture);
+            el.removeEventListener(
+              event,
+              handler.proxyListener,
+              handler.capture
+            );
             handlers.splice(k, 1);
           }
         }
@@ -391,22 +503,24 @@ function off(...args) {
   return this;
 }
 function once(...args) {
-  const dom = this;
+  const self = this;
   let [eventName, targetSelector, listener, capture] = args;
   if (typeof args[1] === 'function') {
     [eventName, listener, capture] = args;
     targetSelector = undefined;
   }
+  // 封装 回调函数，执行一次后自动 off
   function onceHandler(...eventArgs) {
     listener.apply(this, eventArgs);
-    dom.off(eventName, targetSelector, onceHandler, capture);
+    self.off(eventName, targetSelector, onceHandler, capture);
     if (onceHandler.domproxy) {
       delete onceHandler.domproxy;
     }
   }
   onceHandler.domproxy = listener;
-  return dom.on(eventName, targetSelector, onceHandler, capture);
+  return self.on(eventName, targetSelector, onceHandler, capture);
 }
+
 function trigger(...args) {
   const events = args[0].split(' ');
   const eventData = args[1];
@@ -529,15 +643,18 @@ function outerHeight(includeMargins) {
   return null;
 }
 
-// 兼容 jQuery，dom7 是错误的 
+/**
+ * 兼容 jQuery，dom7 是错误的
+ * wia 中，window 滚动被 .page-content 页面层替代
+ */
 function offset(coordinates) {
   if (coordinates)
     return this.each(function (index) {
-		var $this = $(this),
-				coords = $.funcArg(this, coordinates, index, $this.offset()),
-				parentOffset = $this.offsetParent().offset(),
-				props = {
-					top:  coords.top  - parentOffset.top,
+      var $this = $(this),
+        coords = $.funcArg(this, coordinates, index, $this.offset()),
+        parentOffset = $this.offsetParent().offset(),
+        props = {
+          top: coords.top - parentOffset.top,
           left: coords.left - parentOffset.left,
         };
 
@@ -550,27 +667,61 @@ function offset(coordinates) {
     !$.contains(document.documentElement, this[0])
   )
     return {top: 0, left: 0};
-  var obj = this[0].getBoundingClientRect();
-    return {
-		left: obj.left + window.pageXOffset,
-		top: obj.top + window.pageYOffset,
-		width: Math.round(obj.width),
+  const obj = this[0].getBoundingClientRect();
+  const pg = this.closest('.page-content');
+  const scrollX = pg.length ? pg.dom.scrollLeft : window.pageXOffset;
+  const scrollY = pg.length ? pg.dom.scrollTop : window.pageYOffset;
+  return {
+    left: obj.left + scrollX,
+    top: obj.top + scrollY,
+    width: Math.round(obj.width),
     height: Math.round(obj.height),
   };
-  }
+}
+
+function rect() {
+  if (!this.length) return null;
+  if (
+    document.documentElement !== this[0] &&
+    !$.contains(document.documentElement, this[0])
+  )
+    return {top: 0, left: 0};
+  const obj = this[0].getBoundingClientRect();
+  return {
+    left: obj.left,
+    top: obj.top,
+    width: Math.round(obj.width),
+    height: Math.round(obj.height),
+  };
+}
 
 function hide() {
-  for (let i = 0; i < this.length; i += 1) {
-    this[i].style.display = 'none';
-  }
-  return this;
-}
-function show() {
-  return this.each(function() {
-    this.style.display === 'none' && (this.style.display = '');
-    if (getComputedStyle(this, '').getPropertyValue('display') === 'none')
-      this.style.display = 'block'; //defaultDisplay(this.nodeName)
+  return this.each(function () {
+    if (this.style.display != 'none') this.style.display = 'none';
   });
+}
+
+function defaultDisplay(nodeName) {
+  var element, display;
+  if (!elementDisplay[nodeName]) {
+    element = document.createElement(nodeName);
+    document.body.appendChild(element);
+    display = getComputedStyle(element, '').getPropertyValue('display');
+    element.parentNode.removeChild(element);
+    display == 'none' && (display = 'block');
+    elementDisplay[nodeName] = display;
+  }
+  return elementDisplay[nodeName];
+}
+
+function show() {
+  return this.each(function () {
+    this.style.display === 'none' && (this.style.display = '');
+    // Still not visible
+    if (getComputedStyle(this, '').getPropertyValue('display') === 'none')
+      this.style.display = defaultDisplay(this.nodeName); // block
+  });
+
   /*
   for (let i = 0; i < this.length; i += 1) {
     const el = this[i];
@@ -633,14 +784,14 @@ function toArray() {
 }
 
 function each(callback) {
-  emptyArray.some.call(this, function(el, idx) {
+  emptyArray.some.call(this, function (el, idx) {
     return callback.call(el, idx, el) === false;
   });
   return this;
 }
 
 function forEach(callback) {
-  emptyArray.some.call(this, function(el, idx) {
+  emptyArray.some.call(this, function (el, idx) {
     return callback.call(el, el, idx) === false;
   });
   return this;
@@ -690,22 +841,29 @@ function forEach(callback) {
 }
 */
 
-function filter(callback) {
+function filter(cb) {
   const matchedItems = [];
   const dom = this;
   for (let i = 0; i < dom.length; i += 1) {
-    if (callback.call(dom[i], i, dom[i])) matchedItems.push(dom[i]);
+    if (cb.call(dom[i], i, dom[i])) matchedItems.push(dom[i]);
   }
   return new Dom(matchedItems);
 }
-function map(callback) {
+function map(cb) {
   const modifiedItems = [];
   const dom = this;
   for (let i = 0; i < dom.length; i += 1) {
-    modifiedItems.push(callback.call(dom[i], i, dom[i]));
+    modifiedItems.push(cb.call(dom[i], i, dom[i]));
   }
   return new Dom(modifiedItems);
 }
+
+function clone() {
+  return this.map(function () {
+    return this.cloneNode(true);
+  });
+}
+
 // eslint-disable-next-line
 function html(html) {
   if (typeof html === 'undefined') {
@@ -828,12 +986,19 @@ function append(...args) {
 
   return this;
 }
+// 添加当前节点到参数节点的最后
+function appendTo(el) {
+  $(el).append(this);
+  return this;
+}
+
 function insertChild(el, ch) {
-  if (el.children.length) el.insertBefore(ch, el.children[0]);
+  if (el.childNodes.length) el.insertBefore(ch, el.childNodes[0]);
   else el.appendChild(ch);
 }
+
 // 添加参数节点到当节点的最前
-function insert(...args) {
+function prepend(...args) {
   let newChild;
 
   for (let k = 0; k < args.length; k += 1) {
@@ -847,7 +1012,7 @@ function insert(...args) {
           tempDiv.removeChild(tempDiv.lastChild);
         }
       } else if (newChild instanceof Dom) {
-        for (let j = 0; j < newChild.length; j += 1) {
+        for (let j = newChild.length - 1; j >= 0; j -= 1) {
           insertChild(this[i], newChild[j]);
         }
       } else {
@@ -859,41 +1024,9 @@ function insert(...args) {
   return this;
 }
 
-// 添加当前节点到参数节点的最后
-function appendTo(el) {
-  $(el).append(this);
-  return this;
-}
-
 // 添加当前节点到参数节点的最前
-function insertTo(el) {
-  $(el).insert(this);
-  return this;
-}
-
-function prepend(newChild) {
-  let i;
-  let j;
-  for (i = 0; i < this.length; i += 1) {
-    if (typeof newChild === 'string') {
-      const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = newChild;
-      for (j = tempDiv.childNodes.length - 1; j >= 0; j -= 1) {
-        this[i].insertBefore(tempDiv.childNodes[j], this[i].childNodes[0]);
-      }
-    } else if (newChild instanceof Dom) {
-      for (j = 0; j < newChild.length; j += 1) {
-        this[i].insertBefore(newChild[j], this[i].childNodes[0]);
-      }
-    } else {
-      this[i].insertBefore(newChild, this[i].childNodes[0]);
-    }
-  }
-  return this;
-}
-// eslint-disable-next-line
-function prependTo(parent) {
-  $(parent).prepend(this);
+function prependTo(el) {
+  $(el).prepend(this);
   return this;
 }
 
@@ -965,18 +1098,18 @@ function nextNode(selector) {
   const nextEls = [];
   let el = this[0];
   if (!el) return new Dom([]);
-	
+
   let next = el.nextElementSibling; // eslint-disable-line
   while (next) {
     if (selector) {
       if ($(next).is(selector)) {
-				nextEls.push(next);
-				break;
-			}
+        nextEls.push(next);
+        break;
+      }
     } else {
-			nextEls.push(next);
-			break;
-		}
+      nextEls.push(next);
+      break;
+    }
     next = next.nextElementSibling;
   }
   return new Dom(nextEls);
@@ -1028,18 +1161,18 @@ function prevNode(selector) {
   const prevEls = [];
   let el = this[0];
   if (!el) return new Dom([]);
-	
+
   let prev = el.previousElementSibling; // eslint-disable-line
   while (prev) {
     if (selector) {
       if ($(prev).is(selector)) {
-				prevEls.push(prev);
-				break;
-			}
+        prevEls.push(prev);
+        break;
+      }
     } else {
-			prevEls.push(prev);
-			break;
-		}
+      prevEls.push(prev);
+      break;
+    }
     prev = prev.previousElementSibling;
   }
   return new Dom(prevEls);
@@ -1070,7 +1203,7 @@ function siblings(selector) {
 }
 
 /**
- * 所有dom符合条件的父元素
+ * 所有dom节点符合条件的父元素
  */
 function parent(selector) {
   const parents = []; // eslint-disable-line
@@ -1095,11 +1228,10 @@ function parents(selector) {
   for (let i = 0; i < this.length; i += 1) {
     let parent = this[i].parentNode; // eslint-disable-line
     while (parent) {
-      if (selector) {
+      if (selector)
         if ($(parent).is(selector)) parents.push(parent);
-      } else {
-        parents.push(parent);
-      }
+      else parents.push(parent);
+      
       parent = parent.parentNode;
     }
   }
@@ -1110,23 +1242,26 @@ function parents(selector) {
  * 从当前元素的父元素开始沿 DOM 树向上,获得匹配选择器的第一个祖先元素。
  * 选择器为空，则返回 空
  */
-function parentNode(selector) {
-  const parents = []; // eslint-disable-line
-
-  if (typeof selector === 'undefined') return new Dom([]);
+function parentNode(sel) {
+  const R = [];
 
   for (let i = 0; i < this.length; i += 1) {
-    let parent = this[i].parentNode; // eslint-disable-line
+    let parent = this[i].parentNode; 
     while (parent) {
-      if ($(parent).is(selector)) {
-        parents.push(parent);
-        break;
-      }
+      if (sel) {
+				if ($(parent).is(sel)) {
+					R.push(parent);
+					return new Dom(R, sel);	
+				}
+			} else { 
+				R.push(parent);
+				return new Dom(R, sel);				
+			}
 
       parent = parent.parentNode;
     }
   }
-  return $($.uniq(parents));
+	return new Dom(R, sel);
 }
 
 /**
@@ -1176,12 +1311,12 @@ function find(selector) {
  * @param {*} selector
  */
 function findNode(selector) {
-  const foundElements = [];
+  const R = [];
   for (let i = 0; i < this.length; i += 1) {
     const found = this[i].querySelector(selector);
-    foundElements.push(found);
+    R.push(found);
   }
-  return new Dom(foundElements);
+  return new Dom(R, selector);
 }
 
 /**
@@ -1221,7 +1356,7 @@ function childNode(selector) {
       }
     }
   }
-  return new Dom($.uniq(cs));
+  return new Dom(cs, selector);
 }
 
 function remove() {
@@ -1409,27 +1544,28 @@ function qus(sel) {
 }
 
 /**
- * querySelector name
- * return only first
- */
-function qn(name) {
-  return $(this.dom?.querySelector(`[name=${name}]`));
-}
-
-function qns(name) {
-  return $(`[name=${name}]`, this.dom);
-}
-
-/**
  * querySelector attribute
  * return only first
  */
-function qa(name, v) {
-  return $(this.dom?.querySelector(`[${name}=${v}]`));
+function att(name, v) {
+  const n = this.dom?.querySelector(`[${name}=${v}]`);
+  return $(n ? n : []);
 }
 
-function qas(name, v) {
+function atts(name, v) {
   return $(`[${name}=${v}]`, this.dom);
+}
+
+/**
+ * querySelector name
+ * return only first
+ */
+function name(v) {
+  return this.att('name', v);
+}
+
+function names(v) {
+  return this.atts('name', v);
 }
 
 /**
@@ -1437,14 +1573,14 @@ function qas(name, v) {
  * cls: 'aaa bbb'
  * return only first
  */
-function qc(cls) {
+function clas(cls) {
   let R = this.dom?.getElementsByClassName(cls);
   if (R) R = R[0];
 
   return $(R);
 }
 
-function qcs(cls) {
+function clases(cls) {
   let R = this.dom?.getElementsByClassName(cls);
   if (R && R.length > 0) R = [].slice.call(R);
   else R = [];
@@ -1457,14 +1593,14 @@ function qcs(cls) {
  * tag: 'div'
  * return only first
  */
-function qt(tag) {
+function tag(tag) {
   let R = this.dom?.getElementsByTagName(tag);
   if (R) R = R[0];
 
   return $(R);
 }
 
-function qts(tag) {
+function tags(tag) {
   let R = this.dom?.getElementsByTagName(tag);
   if (R && R.length > 0) R = [].slice.call(R);
   else R = [];
@@ -1495,6 +1631,7 @@ export {
   height,
   outerHeight,
   offset,
+  rect,
   hide,
   show,
   styles,
@@ -1502,10 +1639,11 @@ export {
   toArray,
   each,
   forEach,
-	some,
-	every,
+  some,
+  every,
   filter,
   map,
+  clone,
   html,
   text,
   is,
@@ -1514,17 +1652,15 @@ export {
   eq,
   append,
   appendTo,
-  insert,
-  insertTo,
   prepend,
   prependTo,
   insertBefore,
   insertAfter,
   next,
-	nextNode,
+  nextNode,
   nextAll,
   prev,
-	prevNode,
+  prevNode,
   prevAll,
   siblings,
   parent,
@@ -1533,22 +1669,14 @@ export {
   closest,
   qu,
   qus,
-  qn,
-  qns,
-  qa,
-  qas,
-  qt,
-  qts,
-  qc,
-  qcs,
-  qa as att,
-  qas as atts,
-  qn as name,
-  qns as names,
-  qt as tag,
-  qts as tags,
-  qc as class,
-  qcs as classes,
+  att,
+  atts,
+  name,
+  names,
+  tag,
+  tags,
+  clas,
+  clases,
   find,
   findNode,
   hasChild,

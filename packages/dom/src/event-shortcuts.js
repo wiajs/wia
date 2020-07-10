@@ -80,6 +80,12 @@ function resize(...args) {
 function scroll(...args) {
   return eventShortcut.bind(this)('scroll', ...args);
 }
+function swipe(...args) {
+  return eventShortcut.bind(this)('swipe', ...args);
+}
+function press(...args) {
+  return eventShortcut.bind(this)('press', ...args);
+}
 
 export {
   click,
@@ -104,4 +110,6 @@ export {
   touchmove,
   resize,
   scroll,
+  swipe,
+  press,
 };

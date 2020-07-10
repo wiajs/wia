@@ -97,7 +97,7 @@ export default class ListNav extends Event {
       const li = $(e.target).closest('li');
       if (!li.length) return;
 
-      _.$el.classes('active').removeClass('active');
+      _.$el.clases('active').removeClass('active');
       li.addClass('active');
 
       const id = li.attr('i'); // $clickedLi.index();
@@ -119,13 +119,14 @@ export default class ListNav extends Event {
       const li = $(e.target).closest('.item-content');
       if (!li.length) return;
 
-      const tx = li.class('item-title').html();
+      const tx = li.clas('item-title').html();
 
       // 触发 dom 节点事件
       _.$listEl.trigger('select', {data: tx});
 
       // 触发组件事件
       _.emit('local::select listNavSelect', {data: tx});
+			_.emit('local::click listNavClick', e);
     }
 
     const touchesStart = {};
@@ -186,7 +187,7 @@ export default class ListNav extends Event {
       previousIndex = itemIndex;
 
       _.$el.trigger('listindex:select');
-      _.emit('local::select listIndexSelect', _, itemContent, itemIndex);
+      _.emit('local::indexSelect listIndexSelect', _, itemContent, itemIndex);      
     }
     function handleTouchEnd() {
       if (!isTouched) return;

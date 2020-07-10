@@ -7,9 +7,10 @@ import * as Methods from './fn';
 import * as Scroll from './scroll';
 import * as Animate from './animate';
 import * as eventShortcuts from './event-shortcuts';
+import * as Form from './form';
 
 const $ = window.$;
-[Methods, Scroll, Animate, eventShortcuts].forEach((group) => {
+[Methods, Scroll, Animate, Form, eventShortcuts].forEach((group) => {
   Object.keys(group).forEach((methodName) => {
     $.fn[methodName] = group[methodName];
   });

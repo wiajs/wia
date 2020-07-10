@@ -1,6 +1,6 @@
 {
   "name": "@wiajs/dom",
-  "version": "0.1.9",
+  "version": "0.1.2",
   "description": "Fork from jquery/zepto and dom7. Minimalistic JavaScript library for DOM manipulation",
   "main": "index.js",
   "types": "dist/dom.d.ts",

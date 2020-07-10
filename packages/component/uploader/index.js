@@ -9,7 +9,7 @@
     upload: true, // 自动上传
     url: _url, // 上传网址
     dir: 'star/etrip/xhlm', // 图片存储路径，格式: 所有者/应用名称/分类
-    el: pg.class('uploader'), // 组件容器
+    el: pg.clas('uploader'), // 组件容器
     input: pg.name('avatar'), // 上传成功后的url填入输入框，便于提交
     choose: pg.name('choose'), // 点击触发选择文件，可选，多文件时，可不填
 
@@ -139,10 +139,10 @@ export default class Uploader {
 
   getGallery() {
     if (!this.opt.preview) return null;
-      
-    let gal = this.page.class('gallery');
+
+    let gal = this.page.clas('gallery');
     if (!gal || !gal.length) {
-    const tmpl = `
+      const tmpl = `
   <div class="gallery" style="display: none;">
     <span class="_img"></span>
     <div class="flex-center _opr">
@@ -153,7 +153,7 @@ export default class Uploader {
   </div>`;
 
       gal = $(tmpl);
-      gal.insertBefore(this.page.class('page-content'));      
+      gal.insertBefore(this.page.clas('page-content'));
       // 图片预览
       gal.click(ev => {
         ev.stopPropagation(); // 阻止冒泡，避免上层 choose再次触发
@@ -163,11 +163,11 @@ export default class Uploader {
       });
 
       gal.name('delete').click(ev => {
-        const id = gal.class('_img').data('id');
+        const id = gal.clas('_img').data('id');
         this.remove(id);
       });
 
-      gal = this.page.class('gallery');
+      gal = this.page.clas('gallery');
       this.gallery = gal;
     }
     return gal;
@@ -181,7 +181,10 @@ export default class Uploader {
     // };
     // 更改input时，显示图片
     opt.input.change(ev => {
-      const p = JSON.parse(opt.input.val());
+      // 优先获取 data
+      let p = opt.input.dom.data;
+      if ($.isEmpty(p) && opt.input.val()) p = JSON.parse(opt.input.val());
+
       if (p) {
         this.clear();
         this.files = p.file.map(v => {
@@ -236,9 +239,9 @@ export default class Uploader {
 
       if (gal.length) {
         gal
-        .class('_img')
-        .attr('style', file.attr('style'))
-        .data('id', file.data('id'));
+          .clas('_img')
+          .attr('style', file.attr('style'))
+          .data('id', file.data('id'));
         gal.show();
       }
     }
@@ -452,7 +455,7 @@ export default class Uploader {
   clear() {
     this.id = 1;
     this.files = [];
-    this.opt.el.classes('_file').remove();
+    this.opt.el.clases('_file').remove();
     this._callHook('change', this.files);
   }
 
@@ -507,13 +510,13 @@ export default class Uploader {
 
         // $li.find(".progress span").css('width', percent + "%");
         const f = ls.name(`img${file.id}`);
-        const content = f.class('_content');
+        const content = f.clas('_content');
         content.html(`${percent}%`);
 
         // self.opt.input
         //   .parent()
         //   .name(file.name)
-        //   .class('_content')
+        //   .clas('_content')
         //   .html(`${percent}%`);
         // console.log(`... ${percent}%`);
 
@@ -591,7 +594,7 @@ export default class Uploader {
       else {
         let n = this.opt.input.parent();
         n = n.name(file.name);
-        n = n.class('_content');
+        n = n.clas('_content');
         n.html(`${percent}%`);
       }
 

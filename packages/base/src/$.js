@@ -44,11 +44,11 @@ document.ready = function (cb) {
  * Return collection with methods
  */
 class D {
-  constructor(dom, sel) {
-    const len = dom ? dom.length : 0;
-    for (let i = 0; i < len; i++) this[i] = dom[i];
+  constructor(doms, sel) {
+    const len = doms ? doms.length : 0;
+    for (let i = 0; i < len; i++) this[i] = doms[i];
 
-    this.dom = dom ? dom[0] : null;
+    this.dom = doms ? doms[0] : null;
     this.length = len;
     this.selector = sel || '';
   }
@@ -283,6 +283,14 @@ $.isEmptyObject = function (o) {
   for (name in o) return false;
   return true;
 };
+$.isEmpty = function(o) {
+	if ($.isObject(o)) return $.isEmptyObject(o);
+	else if ($.isArray(o)) return o.length === 0;
+	else return (o === '' || o === null || o === undefined);
+};
+$.hasVal = function(o) {
+	return !$.isEmpty(o);
+};
 $.isArray =
   Array.isArray ||
   function (object) {
@@ -305,6 +313,13 @@ $.isNumeric = function (val) {
 };
 
 $.isNumber = $.isNumeric;
+$.isString = function (o) {
+  return $.type(o) === 'string';
+};
+
+$.isDom = function(v) {
+	return D.isD(v);
+}
 
 $.contains = document.documentElement.contains
   ? function (parent, node) {
@@ -319,9 +334,32 @@ $.funcArg = function (context, arg, idx, payload) {
   return isFunction(arg) ? arg.call(context, idx, payload) : arg;
 };
 
-$.trim = function (str) {
+$.trim = function(str) {
   return str == null ? '' : String.prototype.trim.call(str);
 };
+
+/**
+ * 去除字符串头部空格或指定字符
+ */
+$.trimStart = function(s, c) {
+  if (!c) return String(s).replace(/(^\s*)/g, '');
+
+  const rx = new RegExp(format('^%s*', c));
+  return String(s).replace(rx, '');
+}
+
+/**
+ * 去除字符串尾部空格或指定字符
+ */
+$.trimEnd = function(s, c) {
+  if (!s) return '';
+
+  if (!c) return String(s).replace(/(\s*$)/g, '');
+
+  const rx = new RegExp(format('%s*$', c));
+  return String(s).replace(rx, '');
+}
+
 $.map = function (els, cb) {
   var value,
     values = [],

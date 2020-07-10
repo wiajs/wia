@@ -125,9 +125,9 @@ async function getPage(dir) {
         // 需编译文件
         if (pk) {
           R.push(v);
-          }
         }
       }
+    }
   } catch (err) {
     console.log(`getPage exp:${err.message}`);
   }

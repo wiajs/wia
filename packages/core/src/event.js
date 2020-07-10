@@ -3,7 +3,7 @@
  * 需要支持事件的对象，可以从这个类继承，则类实例具备事件功能。
  * Fork from Framework7，
  */
-class Event {
+export default class Event {
   constructor(params = {}, parents = []) {
     const self = this;
     self.params = params;
@@ -110,5 +110,3 @@ class Event {
     return self;
   }
 }
-
-export default Event;

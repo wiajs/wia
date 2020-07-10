@@ -50,28 +50,6 @@ function format(f, ...args) {
 }
 
 /**
- * 去除字符串头部空格或指定字符
- */
-function trimStart(s, c) {
-  if (!c) return String(s).replace(/(^\s*)/g, '');
-
-  const rx = new RegExp(format('^%s*', c));
-  return String(s).replace(rx, '');
-}
-
-/**
- * 去除字符串尾部空格或指定字符
- */
-function trimEnd(s, c) {
-  if (!s) return '';
-
-  if (!c) return String(s).replace(/(\s*$)/g, '');
-
-  const rx = new RegExp(format('%s*$', c));
-  return String(s).replace(rx, '');
-}
-
-/**
  * 格式化日期
  * js 时间转换为指定字符串格式
  * 由于字符串转换为Date时，会按时区加减时间，保存到 js 内的 Date对象，都是标准时间。
@@ -207,10 +185,9 @@ function serObj(obj) {
 export {
   StringBuf,
   format,
-  trimEnd,
-  trimStart,
   dates,
   dates as fmtDate,
+  dates as dateStr,
   addDay,
   newFileName,
   sortObj,

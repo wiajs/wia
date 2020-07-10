@@ -6,7 +6,7 @@ const presets = [
     {
 			loose,
       targets: {
-				// node: 'current' // 按系统安装的node版本作为目标
+				// node: 'current' // 鎸夌郴缁熷畨瑁呯殑node鐗堟湰浣滀负鐩爣
         browsers: [
           '>0.5%',
           'last 2 versions',
