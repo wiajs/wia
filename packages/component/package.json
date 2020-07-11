@@ -1,10 +1,9 @@
 {
   "name": "@wiajs/component",
-  "version": "0.1.2",
+  "version": "0.1.10",
   "description": "wia components",
   "main": "",
-  "scripts": {
-  },
+  "scripts": {},
   "repository": {
     "type": "git",
     "url": "git+https://github.com/wiajs/wia.git"

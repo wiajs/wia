@@ -1,3 +1,70 @@
+/**
+ * 实现底部弹出菜单，支持js 内置button，自动创建 菜单，如：
+ *  _actions = new Actions($.app, {
+ *     buttons: [
+      // First group
+      [
+        {
+          text: '新建费用',
+          icon: '<i class="icon iconfont iconicon_add"></i>',
+          onClick: function () {
+            $.app.dialog.alert('Button1 clicked');
+          },
+        },
+        {
+          text: '选取费用',
+          icon: '<i class="icon iconfont iconsanheng"></i>',
+        },
+      ],
+      // Second group
+      [
+        {
+          text: '取消',
+          color: 'red',
+        },
+      ],
+    ],
+  }
+
+  或者 使用页面模式，如页面html：
+
+  <!-- Actions 背景透明蒙版 -->
+  <div class="actions-backdrop"></div>
+  <!-- Actions Menu -->
+  <div class="actions-modal" style="display: none;">
+    <div class="actions-group">
+      <div name="btnNewFee" class="actions-button">
+        <div class="actions-button-media">
+          <i class="icon iconfont iconicon_add"></i>
+        </div>
+        <div class="actions-button-text">新建费用</div>
+      </div>
+      <div name="btnSelFee" class="actions-button">
+        <div class="actions-button-media">
+          <i class="icon iconfont iconsanheng"></i>
+        </div>
+        <div class="actions-button-text">选取费用</div>
+      </div>
+    </div>
+    <div class="actions-group">
+      <div class="actions-button color-red">
+        <div class="actions-button-text">取消</div>
+      </div>
+    </div>
+  </div>
+
+  代码里面则无需定义 button，按传统方式控制：
+
+  _actions = new Actions($.app, {
+    el: '.actions-modal',
+    backdropEl: '.actions-backdrop',
+    moveToRoot: false, // 不移到root层
+  });
+
+  传统方式，比较直观，容易控制页面样式，内置button方式，页面简单。
+  建议使用 传统方式，控制起来灵活。
+ */
+
 /* eslint indent: ["off"] */
 import {Utils, Modal} from '@wiajs/core';
 
@@ -6,11 +73,13 @@ const defs = {
   forceToPopover: false,
   backdrop: true,
   backdropEl: undefined,
-  closeByBackdropClick: true,
+  closeByBackdropClick: true, // 点击背景关闭
+  closeByOutsideClick: true, // 点击背景之外节点关闭，外置 button时，点击菜单也关闭
   closeOnEscape: false,
   render: null,
   renderPopover: null,
-  // el: '.actions-modal.modal-in',
+  moveToRoot: true, // 移到root层，外置 button时，需设置为 false
+  // el: '.actions-modal',
 };
 
 class Actions extends Modal {
@@ -59,7 +128,7 @@ class Actions extends Modal {
       return actions.destroy();
     }
 
-    // Backdrop
+    // Backdrop，半透明蒙版
     let $backdropEl;
     if (actions.params.backdrop && actions.params.backdropEl) {
       $backdropEl = $(actions.params.backdropEl);
@@ -73,7 +142,6 @@ class Actions extends Modal {
 
     const originalOpen = actions.open;
     const originalClose = actions.close;
-
     let popover;
     function buttonOnClick(e) {
       const $buttonEl = $(this);
@@ -93,10 +161,11 @@ class Actions extends Modal {
         const button = groups[groupIndex][buttonIndex];
         if (button.onClick) button.onClick(actions, e);
         if (actions.params.onClick) actions.params.onClick(actions, e);
-        if (button.close !== false) actions.close();
+        if (button.close !== false) actions.close(); // 除非设置为不关闭，否则自动关闭
       }
     }
-    actions.open = function open(animate) {
+
+    actions.open = function (animate) {
       let convertToPopover = false;
       const {
         targetEl,
@@ -153,16 +222,20 @@ class Actions extends Modal {
           ? $(actions.actionsHtml)
           : actions.$el;
         actions.$el[0].f7Modal = actions;
+
         if (actions.groups) {
           actions.$el.find('.actions-button').each((groupIndex, buttonEl) => {
-            $(buttonEl).on('click', buttonOnClick);
+            const btn = $(buttonEl);
+            btn.click(buttonOnClick);
           });
           actions.once('actionsClosed', () => {
             actions.$el.find('.actions-button').each((groupIndex, buttonEl) => {
-              $(buttonEl).off('click', buttonOnClick);
+              const btn = $(buttonEl);
+              btn.off('click', buttonOnClick);
             });
           });
         }
+
         actions.el = actions.$el[0];
         originalOpen.call(actions, animate);
       }
@@ -187,6 +260,7 @@ class Actions extends Modal {
       type: 'actions',
     });
 
+    // 背景蒙片层被点击
     function handleClick(e) {
       const target = e.target;
       const $target = $(target);
@@ -198,7 +272,9 @@ class Actions extends Modal {
             window.cordova.plugins.Keyboard &&
             window.cordova.plugins.Keyboard.isVisible));
       if (keyboardOpened) return;
-      if ($target.closest(actions.el).length === 0) {
+
+      // 不使用 组件内置创建 buttons
+      if (!groups || $target.closest(actions.el).length === 0) {
         if (
           actions.params.closeByBackdropClick &&
           actions.params.backdrop &&
@@ -279,7 +355,6 @@ class Actions extends Modal {
                 }
                 return `
                 <div class="${buttonClasses.join(' ')}">
-                  <div
                   ${
                     icon
                       ? `<div class="actions-button-media">${icon}</div>`

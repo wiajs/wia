@@ -38,7 +38,7 @@ import Compress from '@wiajs/core/lib/img/compress';
 const parseError = xhr => {
   let msg = '';
   const {responseText, responseType, status, statusText} = xhr;
-  if (!responseText && responseType === 'text') {
+  if (responseText && responseType === 'text') {
     try {
       msg = JSON.parse(responseText);
     } catch (error) {
@@ -259,8 +259,6 @@ export default class Uploader {
     if (evt && this['on' + evt]) {
       return this['on' + evt].apply(this, args);
     }
-
-    return;
   }
 
   chooseFile() {
