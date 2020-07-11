@@ -1,5 +1,5 @@
 /*!
-  * wia base v0.1.9
+  * wia base v0.1.10
   * (c) 2020 Sibyl Yu
   * @license MIT
   */
@@ -82,26 +82,37 @@
   var D =
   /*#__PURE__*/
   function () {
-    function D(dom, sel) {
-      var len = dom ? dom.length : 0;
+    function D(doms, sel) {
+      var len = doms ? doms.length : 0;
 
       for (var i = 0; i < len; i++) {
-        this[i] = dom[i];
+        this[i] = doms[i];
       }
 
-      this.dom = dom ? dom[0] : null;
+      this.dom = doms ? doms[0] : null;
       this.length = len;
       this.selector = sel || '';
     }
 
     D.isD = function isD(d) {
       return d instanceof D;
-    } // Classes and attributes
-    ;
+    };
 
     var _proto = D.prototype;
 
-    _proto.addClass = function addClass(className) {
+    _proto.hasClass = function hasClass(name) {
+      return emptyArray.some.call(this, function (el) {
+        return el.classList.contains(name);
+      });
+    }
+    /**
+     * Add classes to the given element.
+     * @param {string} value - The classes to be add.
+     * @param {boolean} only - Delete all the styles in the same layer, used by tab
+     */
+    ;
+
+    _proto.addClass = function addClass(className, only) {
       if (typeof className === 'undefined') {
         return this;
       }
@@ -110,7 +121,16 @@
 
       for (var i = 0; i < classes.length; i += 1) {
         for (var j = 0; j < this.length; j += 1) {
-          if (typeof this[j] !== 'undefined' && typeof this[j].classList !== 'undefined') this[j].classList.add(classes[i]);
+          var n = this[j];
+
+          if (typeof n !== 'undefined' && typeof n.classList !== 'undefined') {
+            if (arguments.length === 1) n.classList.add(classes[i]);else if (only) {
+              // clear all
+              $$1('.' + classes[i], n.parentNode).removeClass(classes[i]); // add one
+
+              n.classList.add(classes[i]);
+            }
+          }
         }
       }
 
@@ -129,18 +149,49 @@
       return this;
     };
 
-    _proto.hasClass = function hasClass(name) {
-      return emptyArray.some.call(this, function (el) {
-        return el.classList.contains(name);
-      });
+    _proto.clearClass = function clearClass() {
+      var n;
+
+      for (var i = 0; i < this.length; i += 1) {
+        if (typeof this[i] !== 'undefined' && typeof this[i].classList !== 'undefined') {
+          n = this[i];
+
+          for (var j = 0; j < n.classList.length; j++) {
+            n.classList.remove(n.classList.item(j));
+          }
+        }
+      }
+
+      return this;
     };
 
-    _proto.toggleClass = function toggleClass(className) {
+    _proto.replaceClass = function replaceClass(src, dst) {
+      var n;
+
+      for (var i = 0; i < this.length; i += 1) {
+        if (typeof this[i] !== 'undefined' && typeof this[i].classList !== 'undefined') {
+          n = this[i];
+          if (n.contains(src)) n.classList.replace(src, dst);else n.classList.add(dst);
+        }
+      }
+
+      return this;
+    }
+    /**
+     * Add or remove classes from the given element.
+     * @param {string} value - The classes to be toggled.
+     * @param {boolean} add - add or remove.
+     */
+    ;
+
+    _proto.toggleClass = function toggleClass(className, add) {
       var classes = className.split(' ');
 
       for (var i = 0; i < classes.length; i += 1) {
         for (var j = 0; j < this.length; j += 1) {
-          if (typeof this[j] !== 'undefined' && typeof this[j].classList !== 'undefined') this[j].classList.toggle(classes[i]);
+          if (typeof this[j] !== 'undefined' && typeof this[j].classList !== 'undefined') {
+            if (arguments.length === 1) this[j].classList.toggle(classes[i]);else add ? this[j].classList.add(classes[i]) : this[j].classList.remove(classes[i]);
+          }
         }
       }
 
@@ -248,7 +299,17 @@
 
   $$1.noop = function () {};
 
-  $$1.support = Support; // 静态属性,可直接调用
+  $$1.support = Support;
+  var ObjToString = Object.prototype.toString;
+
+  function getTag(value) {
+    if (value == null) {
+      return value === undefined ? '[object Undefined]' : '[object Null]';
+    }
+
+    return ObjToString.call(value);
+  } // 静态属性,可直接调用
+
 
   $$1.type = function (obj) {
     return obj == null ? String(obj) : class2type[toString.call(obj)] || 'object';
@@ -257,23 +318,38 @@
 
   $$1.isWindow = function (o) {
     return o != null && o == o.window;
-  };
+  }; // 对象变量
+
 
   $$1.isObject = function (o) {
     return $$1.type(o) === 'object'; // && o !== null && o.constructor && o.constructor === Object;
   };
 
+  $$1.isObj = $$1.isObject; // 值变量
+
+  $$1.isValue = function (o) {
+    return $$1.type(o) === 'string' || $$1.type(o) === 'number' || $$1.type(o) === 'boolean';
+  };
+
+  $$1.isVal = $$1.isValue; // 函数变量
+
   $$1.isFunction = function (value) {
     return $$1.type(value) === 'function';
   };
+
+  $$1.isFun = $$1.isFunction;
 
   $$1.isDocument = function (o) {
     return o != null && o.nodeType == o.DOCUMENT_NODE;
   };
 
+  $$1.isDoc = $$1.isDocument;
+
   $$1.isPlainObject = function (o) {
     return $$1.isObject(o) && !$$1.isWindow(o) && Object.getPrototypeOf(o) == Object.prototype;
   };
+
+  $$1.isPlain = $$1.isPlainObject;
 
   $$1.isEmptyObject = function (o) {
     var name;
@@ -285,18 +361,52 @@
     return true;
   };
 
+  $$1.isEmpty = function (o) {
+    if ($$1.isObject(o)) return $$1.isEmptyObject(o);else if ($$1.isArray(o)) return o.length === 0;else return o === '' || o === null || o === undefined;
+  };
+
+  $$1.hasVal = function (o) {
+    return !$$1.isEmpty(o);
+  };
+
   $$1.isArray = Array.isArray || function (object) {
     return object instanceof Array;
   };
 
   $$1.inArray = function (elem, array, i) {
     return emptyArray.indexOf.call(array, elem, i);
-  };
+  }; // jQuery new Date() 判断为 数字
+
 
   $$1.isNumeric = function (val) {
-    var num = Number(val),
-        type = typeof val;
-    return val != null && type != 'boolean' && (type != 'string' || val.length) && !isNaN(num) && isFinite(num) || false;
+    return typeof val === 'number' || $$1.isObject(val) && getTag(val) == '[object Number]';
+  };
+
+  $$1.isNumber = $$1.isNumeric;
+  $$1.isNum = $$1.isNumeric;
+
+  $$1.isString = function (o) {
+    return $$1.type(o) === 'string';
+  };
+
+  $$1.isStr = $$1.isString;
+
+  $$1.isDom = function (v) {
+    return D.isD(v);
+  };
+
+  $$1.contains = document.documentElement.contains ? function (parent, node) {
+    return parent !== node && parent.contains(node);
+  } : function (parent, node) {
+    while (node && (node = node.parentNode)) {
+      if (node === parent) return true;
+    }
+
+    return false;
+  };
+
+  $$1.funcArg = function (context, arg, idx, payload) {
+    return isFunction(arg) ? arg.call(context, idx, payload) : arg;
   };
 
   $$1.trim = function (str) {
@@ -328,6 +438,22 @@
     } else {
       for (key in els) {
         if (cb.call(els[key], key, els[key]) === false) return els;
+      }
+    }
+
+    return els;
+  };
+
+  $$1.forEach = function (els, cb) {
+    var i, key;
+
+    if (likeArray(els)) {
+      for (i = 0; i < els.length; i++) {
+        if (cb.call(els[i], els[i], i) === false) return els;
+      }
+    } else {
+      for (key in els) {
+        if (cb.call(els[key], els[key], key) === false) return els;
       }
     }
 
@@ -515,7 +641,8 @@
       } catch (e) {// something got wrong
       }
     });
-  };
+  }; // 下个事件周期触发
+
 
   $$1.nextTick = function (cb, delay) {
     if (delay === void 0) {
@@ -523,7 +650,8 @@
     }
 
     return setTimeout(cb, delay);
-  };
+  }; // 类似 setTimeout的精准动画帧时间出发
+
 
   $$1.nextFrame = function (cb) {
     return $$1.requestAnimationFrame(function () {
@@ -534,11 +662,74 @@
   $$1.now = function () {
     return Date.now();
   };
+  /**
+   * 格式化日期
+   * js 时间转换为指定字符串格式
+   * 由于字符串转换为Date时，会按时区加减时间，保存到 js 内的 Date对象，都是标准时间。
+   * 标准时间转换为字符串时，js 内置函数会根据当前时区还原时间，也就是说Date内部实际上是统一的
+   * 不同时区，转换为字符串时，显示不同。
+   * 如果数据库使用Date对象保存时间字段，不会有问题
+   * 如果使用字符串保存时间，'yyyy-mm-dd' 与 'yyyy/mm/dd' 保存到数据里面的时间不一样。
+   * 需要转换为标准时间保存，格式为 yyyy/MM/dd
+   * $.date('yyyy-MM-dd hh:mm:ss')
+   * $.date('yyyy-MM-dd hh:mm:ss.S')
+   * $.date('yyyyMMddhhmmssS')
+   * $.date('yy-M-d')
+   * $.date('', 3) 当前日期加三天
+   * $.date('', -3) 当前日期减三天
+   * @param {string} fmt 缺省yyyy-MM-dd
+   * @param {string|object} 标准时间，d 缺省new Date()
+   * @returns {string}
+   */
+
+
+  $$1.date = function (fmt, d) {
+    if (!fmt) fmt = 'yyyy-MM-dd';
+    if (!d) d = new Date();else if (typeof d === 'string') {
+      // 输出标准时间字符串
+      // 兼容
+      d = d.replace(/\-/g, '/').replace(/T/g, ' ').replace(/\.+[0-9]+[A-Z]$/, ''); // 还原为标准时间
+
+      d = new Date(d).getTime() - 3600000 * (new Date().getTimezoneOffset() / 60);
+      d = new Date(d);
+    } else if ($$1.isNumber(d)) // 加减 天数
+      d = new Date(Date.now() + d * 86400000); // Date.getXXX 函数会自动还原时区！！！
+
+    var o = {
+      y: d.getFullYear().toString(),
+      M: d.getMonth() + 1,
+      // 月份
+      d: d.getDate(),
+      // 日
+      H: d.getHours(),
+      // 小时
+      h: d.getHours(),
+      // 小时
+      m: d.getMinutes(),
+      // 分
+      s: d.getSeconds(),
+      // 秒
+      q: Math.floor((d.getMonth() + 3) / 3),
+      // 季度
+      S: d.getMilliseconds().toString().padStart(3, '0') // 毫秒
+
+    }; // yy几个就返回 几个数字，使用 slice -4 倒数4个，再往后
+
+    fmt = fmt.replace(/(S+)/g, o.S).replace(/(y+)/gi, function (v) {
+      return o.y.slice(-v.length);
+    });
+    fmt = fmt.replace(/(M+|d+|h+|H+|m+|s+|q+)/g, function (v) {
+      return ((v.length > 1 ? '0' : '') + o[v.slice(-1)]).slice(-2);
+    });
+    return fmt.replace(/\s+00:00:00$/g, '');
+  };
 
   $$1.uniqueNumber = function () {
     uniqueNumber += 1;
     return uniqueNumber;
   };
+
+  $$1.num = $$1.uniqueNumber;
 
   $$1.uid = function (mask, map) {
     if (mask === void 0) {
@@ -566,7 +757,8 @@
     return filter.call(array, function (item, idx) {
       return array.indexOf(item) === idx;
     });
-  };
+  }; // two params promisify
+
 
   $$1.promisify = function (f) {
     return function () {
@@ -578,6 +770,25 @@
         f.apply(void 0, arg.concat([function (err, rs) {
           if (err) rej(err);else res(rs);
         }]));
+      });
+    };
+  }; // one param promisify
+
+
+  $$1.promise = function (f) {
+    return function () {
+      for (var _len5 = arguments.length, arg = new Array(_len5), _key4 = 0; _key4 < _len5; _key4++) {
+        arg[_key4] = arguments[_key4];
+      }
+
+      return new Promise(function (res, rej) {
+        try {
+          f.apply(void 0, arg.concat([function (rs) {
+            res(rs);
+          }]));
+        } catch (ex) {
+          rej(ex.message);
+        }
       });
     };
   };
@@ -604,6 +815,22 @@
     }
 
     return query;
+  }; // "true"  => true
+  // "false" => false
+  // "null"  => null
+  // "42"    => 42
+  // "42.5"  => 42.5
+  // "08"    => "08"
+  // JSON    => parse if valid
+  // String  => self
+
+
+  $$1.deserializeValue = function (value) {
+    try {
+      return value ? value == 'true' || (value == 'false' ? false : value == 'null' ? null : +value + '' == value ? +value : /^[\[\{]/.test(value) ? JSON.parse(value) : value) : value;
+    } catch (e) {
+      return value;
+    }
   };
 
   $$1.ready = document.ready;
@@ -804,13 +1031,49 @@
   });
 
   /**
-   创建xmlHttpRequest,返回xmlHttpRequest实例,根据不同的浏览器做兼容
+   * 创建xmlHttpRequest,返回xmlHttpRequest实例,根据不同的浏览器做兼容
   */
   function getXhr() {
     var rs = null;
     if (window.XMLHttpRequest) rs = new XMLHttpRequest();else if (window.ActiveXObject) rs = new ActiveXObject('Microsoft.XMLHTTP');
     return rs;
   }
+
+  var parseError = function parseError(xhr) {
+    var msg = '';
+    var rs = xhr.responseText,
+        responseType = xhr.responseType,
+        status = xhr.status,
+        statusText = xhr.statusText;
+
+    if (rs && responseType === 'text' && /^\s*[{[]/.test(rs)) {
+      try {
+        msg = JSON.parse(rs);
+      } catch (error) {
+        msg = rs;
+      }
+    } else {
+      msg = status + " " + statusText;
+    }
+
+    var err = new Error(msg);
+    err.status = status;
+    return err;
+  };
+
+  var parseSuccess = function parseSuccess(rs) {
+    if (rs && /^\s*[{[]/.test(rs)) {
+      try {
+        return JSON.parse(rs);
+      } catch (ex) {
+        console.log('parseSuccess', {
+          exp: ex.message
+        });
+      }
+    }
+
+    return rs;
+  };
   /**
    * xmlHttpRequest GET 方法
    * @param url get的URL地址
@@ -819,56 +1082,78 @@
    */
 
 
-  function get$1(url, param) {
+  function get$1(url, param, header) {
     var pm = new Promise(function (res, rej) {
       var xhr = getXhr();
 
       xhr.onreadystatechange = function () {
         if (xhr.readyState === 4) {
-          if (xhr.status === 200) res(xhr.responseText);else rej(new Error(xhr.statusText));
+          if (xhr.status === 200) {
+            var rs = parseSuccess(xhr.responseText);
+            res(rs);
+          } else rej(parseError(xhr));
         }
+      };
+
+      xhr.onerror = function (e) {
+        rej(parseError(xhr));
       };
 
       if (param) {
         if (typeof patam === 'object') param = Object.keys(param).map(function (k) {
           return k + "=" + data[k];
         }).sort().join('&');
-        xhr.open('GET', url + '?' + param, true);
+        xhr.open('GET', url + "?" + param, true);
       } else xhr.open('GET', url, true); // xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
       // xhr.setRequestHeader('Accept-Encoding', 'gzip');
 
 
+      if (header) Object.keys(header).forEach(function (key) {
+        xhr.setRequestHeader(key, header[key]);
+      });
       xhr.send(null);
     });
     return pm;
   }
+  /**
+   * post 方式提交数据
+   * @param {*} url
+   * @param {*} data Object、FormData 或 String
+   * @param {*} header 自定义头
+   */
 
-  function post(url, data) {
+
+  function post(url, data, header) {
     var pm = new Promise(function (res, rej) {
       var xhr = getXhr();
 
       xhr.onreadystatechange = function () {
         if (xhr.readyState === 4) {
-          if (xhr.status === 200) res(xhr.responseText);else rej(new Error(xhr.statusText), xhr.responseText);
+          if (xhr.status === 200) {
+            var rs = parseSuccess(xhr.responseText);
+            res(rs);
+          } else rej(parseError(xhr));
         }
-        /*
-            if ((xhr.readyState === 4) && (xhr.status === 200)) {
-              cb(xhr.responseText);
-            }
-        */
+      };
 
+      xhr.onerror = function (e) {
+        rej(parseError(xhr));
       }; // 异步 post,回调通知
 
 
       xhr.open('POST', url, true);
       var param = data;
-      if (typeof data === 'object') param = Object.keys(data).map(function (k) {
-        return k + "=" + data[k];
-      }).sort().join('&'); // 发送 FormData 数据, 会自动设置为 multipart/form-data
 
-      xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded'); // xhr.setRequestHeader('Content-Type', 'multipart/form-data; boundary=AaB03x');
-      // alert(param);
+      if (data && data instanceof FormData) ; else if (data && typeof data === 'object') {
+        // param = Object.keys(data).map(k => `${k}=${data[k]}`).sort().join('&');
+        param = JSON.stringify(data);
+        xhr.setRequestHeader('Content-type', 'application/json; charset=utf-8');
+      } else xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded'); // alert(param);
 
+
+      if (header) Object.keys(header).forEach(function (key) {
+        xhr.setRequestHeader(key, header[key]);
+      });
       xhr.send(param);
     });
     return pm;

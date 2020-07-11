@@ -57,6 +57,12 @@ class D {
     return d instanceof D;
   }
 
+  hasClass(name) {
+    return emptyArray.some.call(this, function (el) {
+      return el.classList.contains(name);
+    });
+  }
+
   /**
    * Add classes to the given element.
    * @param {string} value - The classes to be add.
@@ -98,10 +104,34 @@ class D {
     return this;
   }
 
-  hasClass(name) {
-    return emptyArray.some.call(this, function (el) {
-      return el.classList.contains(name);
-    });
+  clearClass() {
+    let n;
+    for (let i = 0; i < this.length; i += 1) {
+      if (
+        typeof this[i] !== 'undefined' &&
+        typeof this[i].classList !== 'undefined'
+      ) {
+        n = this[i];
+        for (let j = 0; j < n.classList.length; j++)
+          n.classList.remove(n.classList.item(j));
+      }
+    }
+    return this;
+  }
+
+  replaceClass(src, dst) {
+    let n;
+    for (let i = 0; i < this.length; i += 1) {
+      if (
+        typeof this[i] !== 'undefined' &&
+        typeof this[i].classList !== 'undefined'
+      ) {
+        n = this[i];
+        if (n.contains(src)) n.classList.replace(src, dst);
+        else n.classList.add(dst);
+      }
+    }
+    return this;
   }
 
   /**
@@ -254,6 +284,15 @@ $.expr = {};
 $.noop = function () {};
 $.support = support;
 
+const ObjToString = Object.prototype.toString
+
+function getTag(value) {
+  if (value == null) {
+    return value === undefined ? '[object Undefined]' : '[object Null]'
+  }
+  return ObjToString.call(value)
+}
+
 // 静态属性,可直接调用
 $.type = function (obj) {
   return obj == null ? String(obj) : class2type[toString.call(obj)] || 'object';
@@ -262,15 +301,32 @@ $.type = function (obj) {
 $.isWindow = function (o) {
   return o != null && o == o.window;
 };
+// 对象变量
 $.isObject = function (o) {
   return $.type(o) === 'object'; // && o !== null && o.constructor && o.constructor === Object;
 };
+$.isObj = $.isObject;
+
+// 值变量
+$.isValue = function (o) {
+  return (
+    $.type(o) === 'string' || $.type(o) === 'number' || $.type(o) === 'boolean'
+  );
+};
+$.isVal = $.isValue;
+
+// 函数变量
 $.isFunction = function (value) {
   return $.type(value) === 'function';
 };
+
+$.isFun = $.isFunction;
+
 $.isDocument = function (o) {
   return o != null && o.nodeType == o.DOCUMENT_NODE;
 };
+$.isDoc = $.isDocument;
+
 $.isPlainObject = function (o) {
   return (
     $.isObject(o) &&
@@ -278,18 +334,20 @@ $.isPlainObject = function (o) {
     Object.getPrototypeOf(o) == Object.prototype
   );
 };
+$.isPlain = $.isPlainObject;
+
 $.isEmptyObject = function (o) {
   var name;
   for (name in o) return false;
   return true;
 };
-$.isEmpty = function(o) {
-	if ($.isObject(o)) return $.isEmptyObject(o);
-	else if ($.isArray(o)) return o.length === 0;
-	else return (o === '' || o === null || o === undefined);
+$.isEmpty = function (o) {
+  if ($.isObject(o)) return $.isEmptyObject(o);
+  else if ($.isArray(o)) return o.length === 0;
+  else return o === '' || o === null || o === undefined;
 };
-$.hasVal = function(o) {
-	return !$.isEmpty(o);
+$.hasVal = function (o) {
+  return !$.isEmpty(o);
 };
 $.isArray =
   Array.isArray ||
@@ -299,27 +357,23 @@ $.isArray =
 $.inArray = function (elem, array, i) {
   return emptyArray.indexOf.call(array, elem, i);
 };
+
+// jQuery new Date() 判断为 数字
 $.isNumeric = function (val) {
-  var num = Number(val),
-    type = typeof val;
-  return (
-    (val != null &&
-      type != 'boolean' &&
-      (type != 'string' || val.length) &&
-      !isNaN(num) &&
-      isFinite(num)) ||
-    false
-  );
+  return typeof val === 'number' ||
+    ($.isObject(val) && getTag(val) == '[object Number]')	
 };
 
 $.isNumber = $.isNumeric;
+$.isNum = $.isNumeric;
 $.isString = function (o) {
   return $.type(o) === 'string';
 };
+$.isStr = $.isString;
 
-$.isDom = function(v) {
-	return D.isD(v);
-}
+$.isDom = function (v) {
+  return D.isD(v);
+};
 
 $.contains = document.documentElement.contains
   ? function (parent, node) {
@@ -334,31 +388,9 @@ $.funcArg = function (context, arg, idx, payload) {
   return isFunction(arg) ? arg.call(context, idx, payload) : arg;
 };
 
-$.trim = function(str) {
+$.trim = function (str) {
   return str == null ? '' : String.prototype.trim.call(str);
 };
-
-/**
- * 去除字符串头部空格或指定字符
- */
-$.trimStart = function(s, c) {
-  if (!c) return String(s).replace(/(^\s*)/g, '');
-
-  const rx = new RegExp(format('^%s*', c));
-  return String(s).replace(rx, '');
-}
-
-/**
- * 去除字符串尾部空格或指定字符
- */
-$.trimEnd = function(s, c) {
-  if (!s) return '';
-
-  if (!c) return String(s).replace(/(\s*$)/g, '');
-
-  const rx = new RegExp(format('%s*$', c));
-  return String(s).replace(rx, '');
-}
 
 $.map = function (els, cb) {
   var value,
@@ -593,22 +625,86 @@ $.deleteProps = function (obj) {
   });
 };
 
+// 下个事件周期触发
 $.nextTick = function (cb, delay = 0) {
   return setTimeout(cb, delay);
 };
+
+// 类似 setTimeout的精准动画帧时间出发
 $.nextFrame = function (cb) {
   return $.requestAnimationFrame(() => {
     $.requestAnimationFrame(cb);
   });
 };
+
 $.now = function () {
   return Date.now();
+};
+
+/**
+ * 格式化日期
+ * js 时间转换为指定字符串格式
+ * 由于字符串转换为Date时，会按时区加减时间，保存到 js 内的 Date对象，都是标准时间。
+ * 标准时间转换为字符串时，js 内置函数会根据当前时区还原时间，也就是说Date内部实际上是统一的
+ * 不同时区，转换为字符串时，显示不同。
+ * 如果数据库使用Date对象保存时间字段，不会有问题
+ * 如果使用字符串保存时间，'yyyy-mm-dd' 与 'yyyy/mm/dd' 保存到数据里面的时间不一样。
+ * 需要转换为标准时间保存，格式为 yyyy/MM/dd
+ * $.date('yyyy-MM-dd hh:mm:ss')
+ * $.date('yyyy-MM-dd hh:mm:ss.S')
+ * $.date('yyyyMMddhhmmssS')
+ * $.date('yy-M-d')
+ * $.date('', 3) 当前日期加三天
+ * $.date('', -3) 当前日期减三天
+ * @param {string} fmt 缺省yyyy-MM-dd
+ * @param {string|object} 标准时间，d 缺省new Date()
+ * @returns {string}
+ */
+$.date = function (fmt, d) {
+  if (!fmt) fmt = 'yyyy-MM-dd';
+
+  if (!d) d = new Date();
+  else if (typeof d === 'string') { // 输出标准时间字符串
+    // 兼容
+    d = d
+      .replace(/\-/g, '/')
+      .replace(/T/g, ' ')
+      .replace(/\.+[0-9]+[A-Z]$/, '');
+    // 还原为标准时间
+    d = new Date(d).getTime() - 3600000 * (new Date().getTimezoneOffset() / 60);
+    d = new Date(d);
+  } else if ($.isNumber(d))
+    // 加减 天数
+    d = new Date(Date.now() + d * 86400000);
+
+  // Date.getXXX 函数会自动还原时区！！！
+  const o = {
+    y: d.getFullYear().toString(),
+    M: d.getMonth() + 1, // 月份
+    d: d.getDate(), // 日
+    H: d.getHours(), // 小时
+    h: d.getHours(), // 小时
+    m: d.getMinutes(), // 分
+    s: d.getSeconds(), // 秒
+    q: Math.floor((d.getMonth() + 3) / 3), // 季度
+    S: d.getMilliseconds().toString().padStart(3, '0'), // 毫秒
+  };
+
+  // yy几个就返回 几个数字，使用 slice -4 倒数4个，再往后
+  fmt = fmt.replace(/(S+)/g, o.S).replace(/(y+)/gi, v => o.y.slice(-v.length));
+  fmt = fmt.replace(/(M+|d+|h+|H+|m+|s+|q+)/g, v =>
+    ((v.length > 1 ? '0' : '') + o[v.slice(-1)]).slice(-2)
+  );
+
+  return fmt.replace(/\s+00:00:00$/g, '');
 };
 
 $.uniqueNumber = function () {
   uniqueNumber += 1;
   return uniqueNumber;
 };
+
+$.num = $.uniqueNumber;
 
 $.uid = function (mask = 'xxxxxxxxxx', map = '0123456789abcdef') {
   const {length} = map;
