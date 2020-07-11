@@ -55,10 +55,9 @@ export default class Modal extends Event {
 
   open(animateModal) {
     const modal = this;
-    const app = modal.app;
-    const $el = modal.$el;
-    const $backdropEl = modal.$backdropEl;
-    const type = modal.type;
+    const {app, $el, type, $backdropEl} = modal;
+    const {moveToRoot} = modal.params;
+
     let animate = true;
     if (typeof animateModal !== 'undefined') animate = animateModal;
     else if (typeof modal.params.animate !== 'undefined') {
@@ -86,7 +85,11 @@ export default class Modal extends Event {
 
     const $modalParentEl = $el.parent();
     const wasInDom = $el.parents(document).length > 0;
-    if (app.params.modal.moveToRoot && !$modalParentEl.is(app.root)) {
+    if (
+      moveToRoot &&
+      app.params.modal.moveToRoot &&
+      !$modalParentEl.is(app.root)
+    ) {
       app.root.append($el);
       modal.once(`${type}Closed`, () => {
         if (wasInDom) {
@@ -214,9 +217,14 @@ export default class Modal extends Event {
   destroy() {
     const modal = this;
     if (modal.destroyed) return;
-    modal.emit(`local::beforeDestroy modalBeforeDestroy ${modal.type}BeforeDestroy`, modal);
+    modal.emit(
+      `local::beforeDestroy modalBeforeDestroy ${modal.type}BeforeDestroy`,
+      modal
+    );
     if (modal.$el) {
-      modal.$el.trigger(`modal:beforedestroy ${modal.type.toLowerCase()}:beforedestroy`);
+      modal.$el.trigger(
+        `modal:beforedestroy ${modal.type.toLowerCase()}:beforedestroy`
+      );
       if (modal.$el.length && modal.$el[0].f7Modal) {
         delete modal.$el[0].f7Modal;
       }

@@ -1,5 +1,5 @@
 /*!
-  * wia core v0.1.9
+  * wia core v0.1.10
   * (c) 2020 Sibyl Yu
   * @license MIT
   */
@@ -829,11 +829,11 @@ function Modals (parameters) {
     defaultSelector: defaultSelector,
     constructor: constructor,
     app: app,
-    domProp: 'wiaModal'
+    domProp: 'f7Modal'
   }), {
     open: function open(el, animate) {
       var $el = $(el);
-      var instance = $el[0].wiaModal;
+      var instance = $el[0].f7Modal;
       if (!instance) instance = new constructor(app, {
         el: $el
       });
@@ -846,7 +846,7 @@ function Modals (parameters) {
 
       var $el = $(el);
       if ($el.length === 0) return undefined;
-      var instance = $el[0].wiaModal;
+      var instance = $el[0].f7Modal;
       if (!instance) instance = new constructor(app, {
         el: $el
       });
@@ -1333,7 +1333,7 @@ function (_Module) {
       start: Support.touch ? 'touchstart' : Support.pointerEvents ? 'pointerdown' : 'mousedown',
       move: Support.touch ? 'touchmove' : Support.pointerEvents ? 'pointermove' : 'mousemove',
       end: Support.touch ? 'touchend' : Support.pointerEvents ? 'pointerup' : 'mouseup'
-    }; // 加载use插入的模块类相关方法，Load Use Modules
+    }; // 加载use插入的模块类相关方法（如：create、get、destroy），Load Use Modules
 
     app.useModules(); // 初始化数据，Init Data & Methods
 
@@ -1821,57 +1821,37 @@ function _update(root) {
   return this;
 }
 
-/**
- * 所有页面从该类继承，并必须实现 load 事件！
- * 事件
- *  五个个事件：load -> ready -> show / hide -> unload
- *  load：必选，加载视图、代码，第一次加载后缓存，后续不会重复加载，动态代码也要在这里加载
- *    参数；param
- *    如果需要前路由数据，通过 $.lastPage.data 访问
- *    view 还未创建，隐藏page 不存在
- *  ready：可选，对视图中的对象事件绑定，已经缓存的视图，比如回退，不会再次触发 ready
- *    参数；view、param
- *    如果需要前路由数据，通过 $.lastPage.data 访问
- *  show：可选，视图显示时触发，可以接收参数，操作视图，无论是否缓存（比如回退）都会触发
- *    对于已经加载、绑定隐藏（缓存）的页面，重新显示时，不会触发load和ready，只会触发show
- *    参数：view、param
- *  hide：可选，视图卸载删除时触发，适合保存卸载页面的数据，卸载的页面从页面删除，进入缓存
- *  unload：可选，页面从缓存中删除时触发，目前暂未实现
- *
- * 数据传递
- *  每个页面都能访问当前路由，路由存在以下参数，用户跨页面数据传递
- *  url：页面跳转时的原始网址
- *  param：页面网址及go中传入的参数合并，保存在 param 中
- *  data：路由中需要保存的数据
- *  view：当前页面层，dom 对象，已经包括绑定的事件
- *  $.page：当前页面对象
- *  $.lastPage：前路由，可通过该参数，获取前路由的 data，在后续路由中使用
- *
- */
 var Page =
 /*#__PURE__*/
-function () {
+function (_Event) {
+  _inheritsLoose(Page, _Event);
+
   function Page(app, name, title, style) {
-    this.app = app;
-    this.cfg = app.cfg;
-    this.name = name; // 名称，支持带路径：admin/login
+    var _this;
 
-    this.title = title; // 浏览器标题
+    _this = _Event.call(this, null, [app]) || this;
+    _this.app = app;
+    _this.cfg = app.cfg;
+    _this.name = name; // 名称，支持带路径：admin/login
 
-    this.style = style || "./page/" + name + ".css";
-    this.path = "" + name; // url 路径，不使用正则，直接查找
+    _this.title = title; // 浏览器标题
 
-    this.view = null; // 包含当前页面的div层Dom对象
+    _this.style = style || "./page/" + name + ".css";
+    _this.path = "" + name; // url 路径，不使用正则，直接查找
 
-    this.html = ''; // 页面html文本
+    _this.view = null; // 页面的div层Dom对象，router创建实例时赋值
 
-    this.css = ''; // 页面css样式
+    _this.html = ''; // 页面html文本，router创建实例时赋值
 
-    this.js = ''; // 页面代码
+    _this.css = ''; // 页面css样式，router创建实例时赋值
 
-    this.data = {}; // 页面数据对象
+    _this.js = ''; // 页面代码，router创建实例时赋值
 
-    this.param = {}; // 页面切换传递进来的参数对象
+    _this.data = {}; // 页面数据对象
+
+    _this.param = {}; // 页面切换传递进来的参数对象，router创建实例时赋值
+
+    return _this;
   }
   /**
    * 异步加载页面视图内容
@@ -1884,7 +1864,8 @@ function () {
   var _proto = Page.prototype;
 
   _proto.load = function load(param) {
-    this.param = param; // $.assign(this.data, param);
+    // $.assign(this.data, param);
+    this.emit('local::load pageLoad', param);
   }
   /**
    * 在已经加载就绪的视图上操作
@@ -1895,29 +1876,277 @@ function () {
   ;
 
   _proto.ready = function ready(view, param, back) {
-    $.assign(this, {
-      view: view,
-      param: param,
-      back: back
-    }); // $.assign(this.data, param);
+    // $.assign(this, {page, param, back});
+    // $.assign(this.data, param);
+    // 隐藏所有模板
+    this.emit('local::ready pageReady', view, param, back);
+    view.qus('[name$=-tp]').hide();
   } // 在已经加载的视图上操作
   // dv：页面层，param：参数
   ;
 
   _proto.show = function show(view, param, back) {
-    $.assign(this, {
-      view: view,
-      param: param,
-      back: back
-    }); // $.assign(this.data, param);
+    // 防止空链接，刷新页面
+    view.qus('a[href=""]').attr('href', 'javascript:;');
+    if (!back && this.reset) this.reset();
+    this.emit('local::show pageShow', view, param, back); // $.assign(this, {page, param, back});
+    // $.assign(this.data, param);
+  };
+
+  _proto.hide = function hide(view) {
+    this.emit('local::hide pageHide', view);
   };
 
   return Page;
-}();
+}(Event);
+
+var openedModals = [];
+var dialogsQueue = [];
+
+function clearDialogsQueue() {
+  if (dialogsQueue.length === 0) return;
+  var dialog = dialogsQueue.shift();
+  dialog.open();
+}
+
+var Modal =
+/*#__PURE__*/
+function (_Event) {
+  _inheritsLoose(Modal, _Event);
+
+  function Modal(app, params) {
+    var _this;
+
+    _this = _Event.call(this, params, [app]) || this;
+
+    var modal = _assertThisInitialized(_this);
+
+    var defaults = {};
+    modal.params = Utils.extend(defaults, params);
+    modal.opened = false;
+    return _assertThisInitialized(_this) || _assertThisInitialized(_this);
+  }
+
+  var _proto = Modal.prototype;
+
+  _proto.onOpen = function onOpen() {
+    var modal = this;
+    modal.opened = true;
+    openedModals.push(modal);
+    $('html').addClass("with-modal-" + modal.type.toLowerCase());
+    modal.$el.trigger("modal:open " + modal.type.toLowerCase() + ":open");
+    modal.emit("local::open modalOpen " + modal.type + "Open", modal);
+  };
+
+  _proto.onOpened = function onOpened() {
+    var modal = this;
+    modal.$el.trigger("modal:opened " + modal.type.toLowerCase() + ":opened");
+    modal.emit("local::opened modalOpened " + modal.type + "Opened", modal);
+  };
+
+  _proto.onClose = function onClose() {
+    var modal = this;
+    modal.opened = false;
+    if (!modal.type || !modal.$el) return;
+    openedModals.splice(openedModals.indexOf(modal), 1);
+    $('html').removeClass("with-modal-" + modal.type.toLowerCase());
+    modal.$el.trigger("modal:close " + modal.type.toLowerCase() + ":close");
+    modal.emit("local::close modalClose " + modal.type + "Close", modal);
+  };
+
+  _proto.onClosed = function onClosed() {
+    var modal = this;
+    if (!modal.type || !modal.$el) return;
+    modal.$el.removeClass('modal-out');
+    modal.$el.hide();
+    modal.$el.trigger("modal:closed " + modal.type.toLowerCase() + ":closed");
+    modal.emit("local::closed modalClosed " + modal.type + "Closed", modal);
+  };
+
+  _proto.open = function open(animateModal) {
+    var modal = this;
+    var app = modal.app,
+        $el = modal.$el,
+        type = modal.type,
+        $backdropEl = modal.$backdropEl;
+    var moveToRoot = modal.params.moveToRoot;
+    var animate = true;
+    if (typeof animateModal !== 'undefined') animate = animateModal;else if (typeof modal.params.animate !== 'undefined') {
+      animate = modal.params.animate;
+    }
+
+    if (!$el || $el.hasClass('modal-in')) {
+      return modal;
+    }
+
+    if (type === 'dialog' && app.params.modal.queueDialogs) {
+      var pushToQueue;
+
+      if ($('.dialog.modal-in').length > 0) {
+        pushToQueue = true;
+      } else if (openedModals.length > 0) {
+        openedModals.forEach(function (openedModal) {
+          if (openedModal.type === 'dialog') pushToQueue = true;
+        });
+      }
+
+      if (pushToQueue) {
+        dialogsQueue.push(modal);
+        return modal;
+      }
+    }
+
+    var $modalParentEl = $el.parent();
+    var wasInDom = $el.parents(document).length > 0;
+
+    if (moveToRoot && app.params.modal.moveToRoot && !$modalParentEl.is(app.root)) {
+      app.root.append($el);
+      modal.once(type + "Closed", function () {
+        if (wasInDom) {
+          $modalParentEl.append($el);
+        } else {
+          $el.remove();
+        }
+      });
+    } // Show Modal
+
+
+    $el.show();
+    /* eslint no-underscore-dangle: ["error", { "allow": ["_clientLeft"] }] */
+
+    modal._clientLeft = $el[0].clientLeft; // Modal
+
+    function transitionEnd() {
+      if ($el.hasClass('modal-out')) {
+        modal.onClosed();
+      } else if ($el.hasClass('modal-in')) {
+        modal.onOpened();
+      }
+    }
+
+    if (animate) {
+      if ($backdropEl) {
+        $backdropEl.removeClass('not-animated');
+        $backdropEl.addClass('backdrop-in');
+      }
+
+      $el.animationEnd(function () {
+        transitionEnd();
+      });
+      $el.transitionEnd(function () {
+        transitionEnd();
+      });
+      $el.removeClass('modal-out not-animated').addClass('modal-in');
+      modal.onOpen();
+    } else {
+      if ($backdropEl) {
+        $backdropEl.addClass('backdrop-in not-animated');
+      }
+
+      $el.removeClass('modal-out').addClass('modal-in not-animated');
+      modal.onOpen();
+      modal.onOpened();
+    }
+
+    return modal;
+  };
+
+  _proto.close = function close(animateModal) {
+    var modal = this;
+    var $el = modal.$el;
+    var $backdropEl = modal.$backdropEl;
+    var animate = true;
+    if (typeof animateModal !== 'undefined') animate = animateModal;else if (typeof modal.params.animate !== 'undefined') {
+      animate = modal.params.animate;
+    }
+
+    if (!$el || !$el.hasClass('modal-in')) {
+      if (dialogsQueue.indexOf(modal) >= 0) {
+        dialogsQueue.splice(dialogsQueue.indexOf(modal), 1);
+      }
+
+      return modal;
+    } // backdrop
+
+
+    if ($backdropEl) {
+      var needToHideBackdrop = true;
+
+      if (modal.type === 'popup') {
+        modal.$el.prevAll('.popup.modal-in').each(function (index, popupEl) {
+          var popupInstance = popupEl.f7Modal;
+          if (!popupInstance) return;
+
+          if (popupInstance.params.closeByBackdropClick && popupInstance.params.backdrop && popupInstance.backdropEl === modal.backdropEl) {
+            needToHideBackdrop = false;
+          }
+        });
+      }
+
+      if (needToHideBackdrop) {
+        $backdropEl[animate ? 'removeClass' : 'addClass']('not-animated');
+        $backdropEl.removeClass('backdrop-in');
+      }
+    } // Modal
+
+
+    $el[animate ? 'removeClass' : 'addClass']('not-animated');
+
+    function transitionEnd() {
+      if ($el.hasClass('modal-out')) {
+        modal.onClosed();
+      } else if ($el.hasClass('modal-in')) {
+        modal.onOpened();
+      }
+    }
+
+    if (animate) {
+      $el.animationEnd(function () {
+        transitionEnd();
+      });
+      $el.transitionEnd(function () {
+        transitionEnd();
+      });
+      $el.removeClass('modal-in').addClass('modal-out'); // Emit close
+
+      modal.onClose();
+    } else {
+      $el.addClass('not-animated').removeClass('modal-in').addClass('modal-out'); // Emit close
+
+      modal.onClose();
+      modal.onClosed();
+    }
+
+    if (modal.type === 'dialog') {
+      clearDialogsQueue();
+    }
+
+    return modal;
+  };
+
+  _proto.destroy = function destroy() {
+    var modal = this;
+    if (modal.destroyed) return;
+    modal.emit("local::beforeDestroy modalBeforeDestroy " + modal.type + "BeforeDestroy", modal);
+
+    if (modal.$el) {
+      modal.$el.trigger("modal:beforedestroy " + modal.type.toLowerCase() + ":beforedestroy");
+
+      if (modal.$el.length && modal.$el[0].f7Modal) {
+        delete modal.$el[0].f7Modal;
+      }
+    }
+
+    Utils.deleteProps(modal);
+    modal.destroyed = true;
+  };
+
+  return Modal;
+}(Event);
 
 // export {default as Device} from './device';
 
 var Support$1 = $.support;
 var Device$1 = $.device;
 
-export { Ajax, App, Constructors, Device$1 as Device, Event, Lazy, Modals, Module, Page, Resize, SW$1 as SW, Support$1 as Support, Utils, loadModule };
+export { Ajax, App, Constructors, Device$1 as Device, Event, Lazy, Modal, Modals, Module, Page, Resize, SW$1 as SW, Support$1 as Support, Utils, loadModule };

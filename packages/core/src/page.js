@@ -25,20 +25,24 @@
  *  $.lastPage：前路由，可通过该参数，获取前路由的 data，在后续路由中使用
  *
  */
-export default class Page {
+
+import Event from './event';
+
+export default class Page extends Event {
   constructor(app, name, title, style) {
+    super(null, [app]);
     this.app = app;
     this.cfg = app.cfg;
     this.name = name; // 名称，支持带路径：admin/login
     this.title = title; // 浏览器标题
     this.style = style || `./page/${name}.css`;
     this.path = `${name}`; // url 路径，不使用正则，直接查找
-    this.page = null; // 包含当前页面的div层Dom对象
-    this.html = ''; // 页面html文本
-    this.css = ''; // 页面css样式
-    this.js = ''; // 页面代码
+    this.view = null; // 页面的div层Dom对象，router创建实例时赋值
+    this.html = ''; // 页面html文本，router创建实例时赋值
+    this.css = ''; // 页面css样式，router创建实例时赋值
+    this.js = ''; // 页面代码，router创建实例时赋值
     this.data = {}; // 页面数据对象
-    this.param = {}; // 页面切换传递进来的参数对象
+    this.param = {}; // 页面切换传递进来的参数对象，router创建实例时赋值
   }
 
   /**
@@ -49,25 +53,35 @@ export default class Page {
    */
   load(param) {
     // $.assign(this.data, param);
+    this.emit('local::load pageLoad', param);
   }
 
   /**
    * 在已经加载就绪的视图上操作
-   * @param {*} page 页面层的 Dom 对象，已经使用`$(#page-name)`，做了处理
+   * @param {*} view 页面层的 Dom 对象，已经使用`$(#page-name)`，做了处理
    * @param {*} param go 函数的参数，或 网址中 url 中的参数
    * @param {*} back 是否为回退，A->B, B->A，这种操作属于回退
    */
-  ready(page, param, back) {
+  ready(view, param, back) {
     // $.assign(this, {page, param, back});
     // $.assign(this.data, param);
     // 隐藏所有模板
-    page.qus('[name$=-tp]').hide();
+    this.emit('local::ready pageReady', view, param, back);
+    view.qus('[name$=-tp]').hide();
   }
 
   // 在已经加载的视图上操作
   // dv：页面层，param：参数
-  show(page, param, back) {
+  show(view, param, back) {
+    // 防止空链接，刷新页面
+    view.qus('a[href=""]').attr('href', 'javascript:;');
+    if (!back && this.reset) this.reset();
+
+    this.emit('local::show pageShow', view, param, back);
     // $.assign(this, {page, param, back});
     // $.assign(this.data, param);
+  }
+  hide(view) {
+    this.emit('local::hide pageHide', view);
   }
 }
