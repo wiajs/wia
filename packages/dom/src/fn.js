@@ -1116,7 +1116,7 @@ function nextNode(selector) {
 }
 
 /**
- * 同级向前查找所有符合条件的元素节点，不含文本节点
+ * 同级向后查找所有符合条件的元素节点，不含文本节点
  */
 function nextAll(selector) {
   const nextEls = [];
@@ -1228,9 +1228,9 @@ function parents(selector) {
   for (let i = 0; i < this.length; i += 1) {
     let parent = this[i].parentNode; // eslint-disable-line
     while (parent) {
-      if (selector)
+      if (selector) {
         if ($(parent).is(selector)) parents.push(parent);
-      else parents.push(parent);
+      } else parents.push(parent);
       
       parent = parent.parentNode;
     }
@@ -1314,7 +1314,7 @@ function findNode(selector) {
   const R = [];
   for (let i = 0; i < this.length; i += 1) {
     const found = this[i].querySelector(selector);
-    R.push(found);
+    if (found) R.push(found);
   }
   return new Dom(R, selector);
 }
@@ -1411,7 +1411,7 @@ function hasChild() {
  */
 function firstChild() {
   if (!this.dom || this.dom.children.length === 0) return null;
-  return this.dom.children[0];
+  return new Dom([this.dom.children[0]]); ;
 }
 
 /**
@@ -1419,7 +1419,7 @@ function firstChild() {
  */
 function lastChild() {
   if (!this.dom || this.dom.children.length === 0) return null;
-  return this.dom.children[this.dom.children.length - 1];
+  return new Dom([this.dom.children[this.dom.children.length - 1]]);
 }
 
 /**

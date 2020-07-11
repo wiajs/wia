@@ -40,12 +40,13 @@
 function setForm(v, n, add = false) {
   try {
     const el = this;
+    // 清空所有数据，填充新数据
+    if (!add) el::clearForm();
+
     if (!n) n = el.attr('name');
 
     // 使用模板
     if (n) {
-      if (!add) el.names(`${n}-data`).remove();
-
       const tp = el.name(`${n}-tp`);
       if (tp.length) {
         if ($.isArray(v))
@@ -60,6 +61,88 @@ function setForm(v, n, add = false) {
   } catch (ex) {
     console.error('setForm exp.', {msg: ex.message});
   }
+}
+
+/**
+ * 设置 字段值，根据页面模板，实现页面自动化展示
+ * 在Form表单中，一般用input来存放字符串值，如果使用模板，input type 必须为 hidden
+ * 在非Form表单中，没有input 也可以使用，k为模板名称中不带-tp部分
+ * @param {*} el 容器
+ * @param {*} k 字段名称
+ * @param {*} v 设置值
+ * @param {*} add 重新设置还是新增，重新设置会清除数据项，默认为 false
+ */
+function setField(k, v, add = false) {
+  try {
+    if (!k) return false;
+
+    const el = this;
+
+    // 清除字段数据
+    if (!add) el::clearField(k);
+
+    const $n = el.name(k);
+    if ($n.length > 0) {
+      const n = $n.dom;
+      console.log('setField', {type: n.type});
+      // null undfined 转换为空
+      v = v ?? '';
+      if (v === 'null' || v === 'undefined') v = '';
+
+      if (n.tagName.toLowerCase() === 'textarea') $n.val(v);
+      else if (n.tagName.toLowerCase() === 'input') {
+        if (n.type === 'text') el::setInput(k, v);
+        else if (
+          [
+            'date',
+            'time',
+            'month',
+            'week',
+            'datetime',
+            'datetime-local',
+            'email',
+            'number',
+            'search',
+            'url',
+          ].includes(n.type)
+        )
+          $n.val(v);
+        // 隐藏域，一般使用模板，数据为数组或对象
+        else if (n.type === 'hidden') {
+          el::setInput(k, v);
+          el::setData(k, v);
+          // 触发 input的 onchange 事件，hidden 组件数据变化，不会触发onchange
+          // 这里发起change事件，方便其他组件接收事件后，实现UI等处理
+          // 其他接受change事件的组件，不能再次触发change，否则导致死循环
+          $n.change();
+        } else if (n.type === 'select-one') {
+          for (let i = 0, len = n.options.length; i < len; i++) {
+            if (n.options[i].value === String(v)) {
+              n.options[i].selected = true;
+              break;
+            }
+          }
+        } else if (n.type === 'checkbox') {
+          const ns = el.names(k);
+          ns.each((i, x) => {
+            x.checked = v.includes(x.value);
+          });
+        } else el::setData(k, v);
+      } else el::setData(k, v);
+    } else el::setData(k, v);
+  } catch (ex) {
+    console.error('setField exp.', {msg: ex.message});
+  }
+}
+
+/**
+ * 向 field 中添加值
+ * @param {*} el 容器
+ * @param {*} k 字段名称
+ * @param {*} v 新增数据
+ */
+function addField(k, v) {
+  this::setField(k, v, true);
 }
 
 /**
@@ -118,7 +201,8 @@ function addForm(v, n) {
 }
 
 /**
- * 删除重复数据节点后，根据模板，添加数据节点
+ * 根据模板，添加数据节点
+ * 添加钱，根据id 或 _id，删除相同已加载数据节点
  * 内部函数，被 setData 调用
  * @param {*} tp 模板
  * @param {*} k 字段名称
@@ -134,91 +218,90 @@ function addData(tp, k, r, ns) {
       if (r.id !== undefined || r._id !== undefined) {
         const ds = ns.filter((i, n) => {
           const $n = $(n);
-          return $n.data('id') == r.id || $n.data('_id') == r._id;
+          return (
+            (r.id && $n.data('id') == r.id) ||
+            (r._id && $n.data('_id') == r._id)
+          );
         });
 
         if (ds.length) ds.remove();
       }
-      const tx = eval('`' + tp.dom.outerHTML + '`');
-      $(tx).attr('name', `${k}-data`).show().insertBefore(tp);
+      const $n = $(eval('`' + tp.dom.outerHTML + '`'));
+      if (r.id) $n.data('id', r.id);
+      else if (r._id) $n.data('_id', r._id);
+
+      $n.attr('name', `${k}-data`).insertBefore(tp).show();
     } else {
+      // 非对象，简单值，直接使用模板，值作为 _id，避免重复添加
       const ds = this.names(`${k}-data`);
-      if (!ds || !ds.length || !ds.some(d => $(d).data('id') == r)) {
+      if (!ds || !ds.length || !ds.some(d => $(d).data('_id') == r)) {
         const tx = eval('`' + tp.dom.outerHTML + '`');
-        $(tx).attr('name', `${k}-data`).show().insertBefore(tp);
+        $(tx).data('_id', r).attr('name', `${k}-data`).insertBefore(tp).show();
       }
     }
   } catch (ex) {
-    console.error('uniqData exp.', {msg: ex.message});
+    console.error('addData exp.', {msg: ex.message});
   }
 }
 
 /**
- * 使用模板加载数据设置页面内容
+ * 使用模板加载数据到页面
  * 内部函数，被 setField 调用，只管模板，不管input 和 form
  * 在非 form 和 input环境可用
- * @param {*} el 容器
  * @param {*} v 数据，对象或者对象数组
  * @param {*} k Namespaces，带模板名称空间
  */
-function setData(k, v, add = false) {
+function setData(k, v) {
   try {
     if (!k) return false;
 
     const el = this;
-    // 清除已存在数据项
-    if (!add) el.names(`${k}-data`).remove();
+    if ($.isEmpty(v)) return false;
 
-    if (!$.isEmpty(v)) {
-      // 按模板增加数据
-      const tp = el.name(`${k}-tp`);
-      if (tp.length) {
-        let empty = el.names(`${k}-data`).length === 0;
-        // chip
-        const n = el.name(k).dom;
-        // 如果 input存在，优先获取 input 中的 data
-        if (n && n.type === 'hidden') {
-          const val = n.value;
-          if (!$.isEmpty(n.data)) v = n.data;
-          else if (val) {
-            v = val;
-            if (val.indexOf(',') > -1) v = val.split(',');
-          }
-        }
-
-        const ns = el.names(`${k}-data`);
-
-        if ($.isArray(v))
-          v.forEach(r => {
-            if (r) {
-              empty = false;
-              el::addData(tp, k, r, ns);
-            }
-          });
-        else if (v) {
-          empty = false;
-          el::addData(tp, k, v, ns);
-        }
-
-        // 支持点击删除
-        if (tp.hasClass('chip')) tp.parentNode().click(removeChip);
-
-        // 如果数据节点为空，则显示空节点（存在则显示）
-        if (empty) el.name(`${k}-empty`).show();
-        else el.name(`${k}-empty`).hide();
-      } else {
-        // 没有模板，直接覆盖
-        const n = el.name(`${k}`);
-        if (n.length && n.dom.type !== 'hidden' && n.dom.type != 'text') {
-          const r = v;
-          const tx = n.html();
-          if (r && tx.indexOf('${') > -1) n.html(eval('`' + tx + '`'));
+    // 按模板增加数据
+    const tp = el.name(`${k}-tp`);
+    if (tp.length) {
+      let empty = el.names(`${k}-data`).length === 0;
+      // chip
+      const n = el.name(k).dom;
+      // 如果 input存在，优先获取 input 中的 data
+      if (n && n.type === 'hidden') {
+        const val = n.value;
+        if (!$.isEmpty(n.data)) v = n.data;
+        else if (val) {
+          v = val;
+          if (val.indexOf(',') > -1) v = val.split(',');
         }
       }
+
+      const ns = el.names(`${k}-data`);
+
+      if ($.isArray(v))
+        v.forEach(r => {
+          if (r) {
+            empty = false;
+            el::addData(tp, k, r, ns);
+          }
+        });
+      else if (v) {
+        empty = false;
+        el::addData(tp, k, v, ns);
+      }
+
+      // 支持点击删除
+      if (tp.hasClass('chip')) tp.parentNode().click(removeChip);
+
+      // 如果数据节点为空，则显示空节点（存在则显示）
+      if (empty) el.name(`${k}-empty`).show();
+      else el.name(`${k}-empty`).hide();
     } else {
-      // 清除已存在数据项
-      el.names(`${k}-data`).remove();
-      el.name(`${k}-empty`).show();
+      // 没有模板，直接覆盖
+      const n = el.name(`${k}`);
+      if (n.length && n.dom.type !== 'hidden' && n.dom.type != 'text') {
+        const r = v;
+        const tx = n.html();
+        if (r && tx.indexOf('${') > -1) n.html(eval('`' + tx + '`'));
+      }
     }
   } catch (ex) {
     console.error('setData exp.', {msg: ex.message});
@@ -226,35 +309,45 @@ function setData(k, v, add = false) {
 }
 
 /**
- * input 赋值时设置数据，内部函数，被 setInput调用
+ * input 赋值时设置数据，自动去重
+ * 内部函数，被 setInput调用
  * @param {*} n input Dom 实例
- * @param {*} v
- * @param {*} add
+ * @param {*} v 值
+ * @param {*} org 原来的值
  */
-function setValue(n, v, add = false) {
-  if ($.isObject(v)) {
-    if (add) {
-      const org = n.dom.data;
-      if ($.isEmpty(org)) n.dom.data = v;
-      else if ($.isObject(org)) {
-        if (org.id !== v.id && org._id !== v._id) n.dom.data = [org, v];
-        else n.dom.data = [v];
-      } else if ($.isArray(org)) {
-        const rs = org.filter(o => o.id !== v.id && o._id !== v._id);
-        rs.push(v);
-        n.dom.data = rs;
-      }
-    } else n.dom.data = v;
-  } else {
-    let val = v;
-    if (add && n.val()) val = `${n.val()},${v}`;
-    else val = `${v}`; // 转换为字符串
+function getValue(n, v, org) {
+  let R = v;
 
-    // 去重
-    if (val.indexOf(',') > -1)
-      val = Array.from(new Set(val.split(','))).join(',');
-    n.val(val);
+  try {
+    // 对象需判断是否重复
+    if ($.isObject(v)) {
+      if ($.isObject(org)) {
+        if ((org.id && org.id == v.id) || (org._id && org._id == v._id)) R = v;
+        else R = [org, v];
+      } else if ($.isArray(org)) {
+        const rs = org.filter(
+          o =>
+            (!o.id && !o._id) ||
+            (o.id && o.id != v.id) ||
+            (o._id && o._id != v._id)
+        );
+        if (rs.length) {
+          rs.push(v);
+          R = rs;
+        }
+      }
+    } else {
+      // 值变量，直接使用 value 字符串方式存储
+      let val = `${org},${v}`;
+      // 去重
+      if (val.indexOf(',') > -1)
+        val = Array.from(new Set(val.split(','))).join(',');
+      R = val;
+    }
+  } catch (e) {
+    console.error('getValue exp.', {msg: e.message});
   }
+  return R;
 }
 
 /**
@@ -262,80 +355,116 @@ function setValue(n, v, add = false) {
  * 如果带id，则检查是否已存在，避免重复添加
  * @param {*} k 字段名称
  * @param {*} v 值，接受字符串、对象 和 对象数组
- * @param {*} add 添加还是覆盖，默认为覆盖
+ * 对象、对象数组 赋值到 data，值，值数组，赋值到 value
  */
-function setInput(k, v, add = false) {
+function setInput(k, v) {
   try {
     const el = this;
     const n = el.name(k);
     if (!n.length) return;
 
-    if ($.isArray(v)) v.forEach(r => setValue(n, r, add));
-    else setValue(n, v, add);
+    if ($.isEmpty(v)) return;
+
+    // 没有id 和 _id，自动添加 _id，避免重复添加
+    if ($.isObject(v) && v.id === undefined && v._id === undefined)
+      v._id = $.num();
+    else if ($.isArray(v)) {
+      v.forEach(r => {
+        if ($.isObject(r) && r.id === undefined && r._id === undefined)
+          r._id = $.num();
+      });
+    }
+
+    let org = n.dom.data;
+    if (!org) {
+      org = n.val();
+      // 隐藏域，还原对象
+      if (n.dom.type === 'hidden' && /\s*[{[]/g.test(org)) {
+        try {
+          org = JSON.parse(org);
+          n.dom.data = org;
+          n.val('');
+        } catch (e) {
+          console.error('setInput exp.', {msg: e.message});
+        }
+      }
+    }
+
+    if ($.isEmpty(org)) {
+      if ($.isVal(v)) n.val(v);
+      else if ($.isArray(v) && $.isVal(v[0])) n.val(v.join(','));
+      else n.dom.data = v;
+    } else {
+      if ($.isArray(v)) {
+        v = v.reduce((pre, cur) => getValue(n, cur, pre), org);
+        if ($.hasVal(v) && $.isArray(v)) {
+          v = Array.from(new Set(v));
+        }
+      } else v = getValue(n, v, org);
+
+      if ($.hasVal(v)) {
+        if ($.isVal(v)) n.val(v);
+        // 值 数组
+        else if ($.isArray(v) && $.isVal(v[0])) n.val(v.join(','));
+        else n.dom.data = v;
+      }
+    }
   } catch (ex) {
     console.error('setInput exp.', {msg: ex.message});
   }
 }
 
 /**
- * 设置 字段值，根据页面模板，实现页面自动化展示
- * 在Form表单中，一般用input来存放字符串值，如果使用模板，input type 必须为 hidden
- * 在非Form表单中，没有input 也可以使用，k为模板名称中不带-tp部分
- * @param {*} el 容器
- * @param {*} k 字段名称
- * @param {*} v 设置值
- * @param {*} add 重新设置还是新增，重新设置会清除数据项，默认为 false
+ * 清除表单
  */
-function setField(k, v, add = false) {
+function clearForm() {
   try {
-    if (!k) return false;
-
     const el = this;
-    const $n = el.name(k);
-    if ($n.length > 0) {
-      const n = $n.dom;
-      console.log('setField', {type: n.type});
-      // null undfined 转换为空
-      v = v ?? '';
-      if (v === 'null' || v === 'undefined') v = '';
+    // 清除input值
+    let es = el.find('input,textarea');
+    es.forEach(e => {
+      if (e.data) {
+        e.data = null;
+        delete e.data;
+      }
+      if (e.type !== 'checkbox') e.value = '';
+    });
 
-      if (n.type === 'text') el::setInput(k, v, add);
-      else if (n.type === 'date') $n.val(v);
-      // 隐藏域，一般使用模板，数据为数组或对象
-      else if (n.type === 'hidden') {
-        el::setInput(k, v, add);
-        el::setData(k, v, add);
-        // 触发 input的 onchange 事件，hidden 组件数据变化，不会触发onchange
-        // 这里发起change事件，方便其他组件接收事件后，实现UI等处理
-        // 其他接受change事件的组件，不能再次触发change，否则导致死循环
-        $n.change();
-      } else if (n.type === 'select-one') {
-        for (let i = 0, len = n.options.length; i < len; i++) {
-          if (n.options[i].value === String(v)) {
-            n.options[i].selected = true;
-            break;
-          }
-        }
-      } else if (n.type === 'checkbox') {
-        const ns = el.names(k);
-        ns.each((i, x) => {
-          x.checked = v.includes(x.value);
-        });
-      } else el::setData(k, v, add);
-    } else el::setData(k, v, add);
-  } catch (ex) {
-    console.error('setField exp.', {msg: ex.message});
+    // 清除 模板数据
+    el.find('[name$=-data]').remove();
+    el.find('[name$=-empty]').show();
+  } catch (e) {
+    console.error(`clearForm exp:${e.message}`);
   }
 }
 
 /**
- * 向 field 中添加值
- * @param {*} el 容器
- * @param {*} k 字段名称
- * @param {*} v 新增数据
+ * 清除字段
  */
-function addField(k, v) {
-  this::setField(k, v, true);
+function clearField(k) {
+  try {
+    const el = this;
+    // 清除input值
+    const es = el.names(k);
+    es.forEach(e => {
+      if (
+        e.tagName.toLowerCase() === 'input' ||
+        e.tagName.toLowerCase() === 'textarea'
+      ) {
+        if (e.data) {
+          e.data = null;
+          delete e.data;
+        }
+        if (e.type !== 'checkbox') e.value = '';
+      }
+    });
+
+    // 清除 模板数据
+    el.names(`${k}-data`).remove();
+    el.name(`${k}-empty`).show();
+  } catch (e) {
+    console.error(`clearField exp:${e.message}`);
+  }
 }
 
 /**
@@ -373,8 +502,16 @@ function getForm(n) {
         if (!$.isEmpty(r)) rs.push({...r});
         r = {};
       }
-      r[k] = e[1];
+      let v = e[1];
+      // 还原对象
+      try {
+        if (/^\s*[{[]/.test(v)) v = JSON.parse(v);
+      } catch (e) {
+        console.error('getForm exp.', {msg: e.message});
+      }
+      r[k] = v;
     }
+
     if ($.hasVal(r)) rs.push(r);
     if (rs.length === 1) R = rs[0];
     else if (rs.length > 1) R = rs;
@@ -406,11 +543,17 @@ function getField(k) {
   return R;
 }
 
+// export const fn = {
 export {
   setForm,
   addForm,
+  getForm,
+  clearForm,
   setField,
   addField,
-  getForm,
+  clearField,
   getField,
 };
+
+// test
+// Object.keys(fn).forEach(k => ($.fn[k] = fn[k]));
