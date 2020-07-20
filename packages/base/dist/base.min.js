@@ -1,5 +1,5 @@
 /*!
-  * wia base v0.1.10
+  * wia base v0.1.11
   * (c) 2020 Sibyl Yu
   * @license MIT
   */
