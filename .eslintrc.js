@@ -3,11 +3,14 @@ module.exports = {
   parser: "babel-eslint", // "typescript-eslint-parser", "babel-eslint",
   env: {
     es6: true,
+    es2017: true,
+    es2020: true,
     browser: true,  // 浏览器环境中的全局变量
     node: true,
     commonjs: true,
     mongo: true,
-    jest: true
+    jest: true,
+    jquery: true
   },
   parserOptions: {
     ecmaVersion: 6,
@@ -16,7 +19,13 @@ module.exports = {
       jsx: true
     }
   },
-  extends: [
+  plugins: [ // 插件，需安装好，配置时省略 eslint-plugin-
+    html,
+    babel, 
+    react,
+    graphql,
+  ],
+  extends: [ // 继承规则
     'airbnb' // 'eslint:recommended'
     //'plugin:vue/essential',
     //'@vue/airbnb'
@@ -49,6 +58,7 @@ module.exports = {
     "no-unused-expressions": ["error", { "allowShortCircuit": true }],
     "no-underscore-dangle": 0,
     "no-unused-vars": [0, { "vars": "local", "args": "after-used" }],
+    "operator-linebreak": 0,		
     "generator-star-spacing": 0,
     // if while function 后面的{必须与if在同一行，java风格。
     // "brace-style": [2, "1tbs", { "allowSingleLine": true }]
