@@ -1,5 +1,5 @@
 /*!
-  * wia core v0.1.10
+  * wia core v0.1.11
   * (c) 2020 Sibyl Yu
   * @license MIT
   */
@@ -1885,16 +1885,23 @@ function (_Event) {
     // 隐藏所有模板
     this.emit('local::ready pageReady', view, param, back);
     view.qus('[name$=-tp]').hide();
-  } // 在已经加载的视图上操作
-  // dv：页面层，param：参数
+  } // 显示已加载的页面
+  // view：页面Dom层，param：参数
   ;
 
-  _proto.show = function show(view, param, back) {
+  _proto.show = function show(view, param) {
     // 防止空链接，刷新页面
     view.qus('a[href=""]').attr('href', 'javascript:;');
-    if (!back && this.reset) this.reset();
-    this.emit('local::show pageShow', view, param, back); // $.assign(this, {page, param, back});
-    // $.assign(this.data, param);
+    if (this.reset) this.reset();
+    this.emit('local::show pageShow', view, param);
+  } // 回退显示已加载的页面
+  // view：页面Dom层，param：参数
+  ;
+
+  _proto.back = function back(view, param) {
+    // 防止空链接，刷新页面
+    view.qus('a[href=""]').attr('href', 'javascript:;');
+    this.emit('local::back pageBack', view, param);
   };
 
   _proto.hide = function hide(view) {

@@ -70,17 +70,24 @@ export default class Page extends Event {
     view.qus('[name$=-tp]').hide();
   }
 
-  // 在已经加载的视图上操作
-  // dv：页面层，param：参数
-  show(view, param, back) {
+  // 显示已加载的页面
+  // view：页面Dom层，param：参数
+  show(view, param) {
     // 防止空链接，刷新页面
     view.qus('a[href=""]').attr('href', 'javascript:;');
-    if (!back && this.reset) this.reset();
-
-    this.emit('local::show pageShow', view, param, back);
-    // $.assign(this, {page, param, back});
-    // $.assign(this.data, param);
+    if (this.reset) this.reset();
+    this.emit('local::show pageShow', view, param);
   }
+
+  // 回退显示已加载的页面
+  // view：页面Dom层，param：参数
+  back(view, param) {
+    // 防止空链接，刷新页面
+    view.qus('a[href=""]').attr('href', 'javascript:;');
+
+    this.emit('local::back pageBack', view, param);
+  }
+
   hide(view) {
     this.emit('local::hide pageHide', view);
   }
