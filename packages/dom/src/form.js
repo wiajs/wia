@@ -82,6 +82,7 @@ function setField(k, v, add = false) {
     if (!add) el::clearField(k);
 
     const $n = el.name(k);
+    // 容器内找到字段名称组件
     if ($n.length > 0) {
       const n = $n.dom;
       console.log('setField', {type: n.type});
@@ -90,6 +91,7 @@ function setField(k, v, add = false) {
       if (v === 'null' || v === 'undefined') v = '';
 
       if (n.tagName.toLowerCase() === 'textarea') $n.val(v);
+      // input 赋值
       else if (n.tagName.toLowerCase() === 'input') {
         if (n.type === 'text') el::setInput(k, v);
         else if (
@@ -202,7 +204,7 @@ function addForm(v, n) {
 
 /**
  * 根据模板，添加数据节点
- * 添加钱，根据id 或 _id，删除相同已加载数据节点
+ * 添加前，根据id 或 _id，删除相同已加载数据节点，避免重复添加
  * 内部函数，被 setData 调用
  * @param {*} tp 模板
  * @param {*} k 字段名称
@@ -248,8 +250,8 @@ function addData(tp, k, r, ns) {
  * 使用模板加载数据到页面
  * 内部函数，被 setField 调用，只管模板，不管input 和 form
  * 在非 form 和 input环境可用
+ * @param {*} k 模板名称
  * @param {*} v 数据，对象或者对象数组
- * @param {*} k Namespaces，带模板名称空间
  */
 function setData(k, v) {
   try {
@@ -260,6 +262,7 @@ function setData(k, v) {
 
     // 按模板增加数据
     const tp = el.name(`${k}-tp`);
+    // 有模板，使用模板添加数据
     if (tp.length) {
       let empty = el.names(`${k}-data`).length === 0;
       // chip
@@ -295,13 +298,20 @@ function setData(k, v) {
       if (empty) el.name(`${k}-empty`).show();
       else el.name(`${k}-empty`).hide();
     } else {
-      // 没有模板，直接覆盖
-      const n = el.name(`${k}`);
-      if (n.length && n.dom.type !== 'hidden' && n.dom.type != 'text') {
         const r = v;
+      // 没有-tp模板，查找-val，直接覆盖
+      const vp = el.name(`${k}-val`);
+      if (vp.length) {
+        const tx = vp.html();
+        if (r && tx.indexOf('${') > -1) vp.html(eval('`' + tx + '`'));
+      } else {
+        // 没有-tp和-val，直接覆盖内容
+      const n = el.name(`${k}`);
+        if (n.length && n.dom.type !== 'text') {
         const tx = n.html();
         if (r && tx.indexOf('${') > -1) n.html(eval('`' + tx + '`'));
       }
+    }
     }
   } catch (ex) {
     console.error('setData exp.', {msg: ex.message});
@@ -468,7 +478,8 @@ function clearField(k) {
 }
 
 /**
- * 读取整个页面数据，返回对象 或对象数组
+ * 读取整个页面表单数据，返回对象 或对象数组
+ * 需要被读取的数据，需使用 input，包括隐藏域，否则无法被读取
  * 读取时，自动将所有隐藏域的data对象，转换为字符串，方便FormData 提交服务器。
  * @param {*} n 模板名称，不填与容器名称相同，可选参数
  */
@@ -476,20 +487,27 @@ function getForm(n) {
   let R = null;
   try {
     const el = this;
+    // 将data存入 value，方便FormData读取
     el.find('input[type=hidden]').forEach(d => {
       if (!$.isEmpty(d.data)) d.value = JSON.stringify(d.data);
     });
 
     if (!n) n = el.attr('name');
 
+    // 对象列表表单，需删除模板，避免模板数据干扰数据获取
     const tp = el.name(`${n}-tp`);
     let prev = null;
-    if (tp.length) {
+    let hasTp = tp.length;
+    if (hasTp) {
+      hasTp = true;
       prev = tp.prev();
       tp.remove();
     }
+
+    // 读取整个表单输入数据
     const fd = new FormData(el.dom);
-    if (tp.length) tp.insertAfter(prev);
+    // 还原模板
+    if (hasTp) tp.insertAfter(prev);
 
     const rs = [];
     let last = null;
