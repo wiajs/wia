@@ -1,6 +1,6 @@
 {
   "name": "@wiajs/base",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "description": "wia base lib, included by wia app's index.html",
   "main": "index.js",
   "types": "dist/base.d.ts",
