@@ -1287,6 +1287,7 @@ var Device = function Device() {
     ipad: false,
     edge: false,
     ie: false,
+    wx: false,
     firefox: false,
     macos: false,
     windows: false,
@@ -1399,7 +1400,8 @@ var Device = function Device() {
 
 
   device.wechat = /MicroMessenger/i.test(ua);
-  device.weixin = device.wechat; // Export object
+  device.weixin = device.wechat;
+  device.wx = device.wechat; // Export object
 
   return device;
 }();
@@ -1416,7 +1418,8 @@ var Device = function Device() {
  */
 
 window.$ === undefined && (window.$ = $$1);
-$$1.device = Device; // 将 event 模块中的事件方法加载到 $
+$$1.device = Device;
+$$1.support = Support; // 将 event 模块中的事件方法加载到 $
 
 Object.keys(Event).forEach(function (k) {
   $$1[k] = Event[k];

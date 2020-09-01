@@ -14,6 +14,7 @@ const Device = (function Device() {
     ipad: false,
     edge: false,
     ie: false,
+		wx: false,
     firefox: false,
     macos: false,
     windows: false,
@@ -126,6 +127,7 @@ const Device = (function Device() {
 	// weixin
 	device.wechat = /MicroMessenger/i.test(ua);
 	device.weixin = device.wechat;
+	device.wx = device.wechat;
 
   // Export object
   return device;

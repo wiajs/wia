@@ -14,11 +14,13 @@ import * as Store from './store';
 import * as Ajax from './ajax';
 import * as Module from './module';
 import device from './device';
+import support from './support';
 
 // export $ to window globle
 window.$ === undefined && (window.$ = $);
 
 $.device = device;
+$.support = support;
 
 // 将 event 模块中的事件方法加载到 $
 Object.keys(Event).forEach(k => {
