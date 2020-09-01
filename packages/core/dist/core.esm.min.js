@@ -1,5 +1,5 @@
 /*!
-  * wia core v0.1.11
+  * wia core v0.1.12
   * (c) 2020 Sibyl Yu
   * @license MIT
   */
