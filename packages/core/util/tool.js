@@ -72,7 +72,6 @@ function trimEnd(s, c) {
   return String(s).replace(rx, '');
 }
 
-
 function addDay(n, d) {
   if (!d) d = new Date();
   else if (typeof d === 'string') {
@@ -130,6 +129,37 @@ function newFileName(len) {
 }
 
 /**
+ * 比较方法，用于对象数组排序，常用于数据表排序
+ * @param {*} p 属性
+ * @param {*} asc 升序、降序，默认升序
+ */
+function compareObj(p, desc) {
+  return function (o1, o2) {
+    let R = 0;
+    let v1 = o1[p];
+    let v2 = o2[p];
+    // 数字、日期字符串，按数字、日期排序
+    if ($.isStr(v1) || $.isStr(v2)) {
+			if ($.isDateStr(v1) && $.isDateStr(v2)) {
+				v1 = Date.parse(v1);
+				v2 = Date.parse(v2);
+			} else if ($.isNumStr(v1) && $.isNumStr(v2)) {
+				v1 = Number(v1);
+				v2 = Number(v2);
+			}			
+		}
+
+    if (v1 < v2) {
+      R =  desc ? 1: -1;
+    } else if (v1 > v2) {
+      R = desc ? -1: 1;
+    }
+
+    return R;
+  };
+}
+
+/**
  * 对象按名称排序，签名时需要
  * @param {*} obj
  * @param {*} fn
@@ -156,4 +186,15 @@ function serObj(obj) {
     .join('&');
 }
 
-export {StringBuf, format, trimStart, trimEnd, addDay, newFileName, sortObj, serObj, setTitle};
+export {
+  StringBuf,
+  format,
+  trimStart,
+  trimEnd,
+  addDay,
+  newFileName,
+  compareObj,
+  sortObj,
+  serObj,
+  setTitle,
+};

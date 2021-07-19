@@ -1338,7 +1338,7 @@ function children(selector) {
 }
 
 /**
- * 返回被选元素的第一个符合条件子元素，不包括文本节点
+ * 返回被选元素的第一个符合条件直接子元素，不包括文本节点
  * @param {*} selector
  */
 function childNode(selector) {

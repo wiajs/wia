@@ -37,7 +37,9 @@ export default class Page extends Event {
     this.title = title; // 浏览器标题
     this.style = style || `./page/${name}.css`;
     this.path = `${name}`; // url 路径，不使用正则，直接查找
-    this.view = null; // 页面的div层Dom对象，router创建实例时赋值
+    this.view = null; // 页面的div层$Dom对象，router创建实例时赋值
+    this.el = null; // dom
+    this.$el = null; // $dom
     this.html = ''; // 页面html文本，router创建实例时赋值
     this.css = ''; // 页面css样式，router创建实例时赋值
     this.js = ''; // 页面代码，router创建实例时赋值

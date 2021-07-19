@@ -1,6 +1,10 @@
 /* eslint-disable import/no-extraneous-dependencies */
 /**
  * 自动根据src、dist目录文件生成 wiafile.yml 文件映射
+ * build时，比较当前文件hash与上次build时的hash值，
+ * 变化则放入 update中，再针对 update部分文件进行build，
+ *
+ *
  */
 const _ = require('lodash');
 const path = require('path');
@@ -23,35 +27,42 @@ function promisify(f) {
 }
 
 /**
- * 获取wia文件，保存到 wiafile.yml 文件，返回 update，便于编译或者发布。
+ * 获取wia文件，保存到 wiafile.yml 文件，返回更新的文件集到 update，
+ * 便于编译或者发布。
  * @param {*} dir 文件map路径
  * @param {*} act build or pub，build 时，读取src，pub时，读取 dist
  */
-async function make(dir, act = 'build') {
+async function make(dir, cfg, act = 'build', all = false) {
   let R = {};
 
   try {
     dir = dir || process.cwd(); // 默认指向运行目录
     _src = act === 'pub' ? path.join(dir, './dist') : path.join(dir, './src');
-    _cfg = require(path.join(dir, './wiaconfig.js')); // eslint-disable-line
+    _cfg = cfg;
+    // require(path.join(dir, './wiaconfig.js')); // eslint-disable-line
 
     const {ver} = _cfg;
     // const rs = await getFiles(dir, ver); // 获得该项目所有文件，变化的文件放入f.R 中
     // 获取上次自动上传文件清单
-    const f = path.resolve(dir, './wiafile.yml');
     let rs = {};
     let r = {};
-    if (fs.existsSync(f)) r = yaml.safeLoad(fs.readFileSync(f, 'utf8')); // eslint-disable-line
-    // r = yaml.safeLoad(fs.readFileSync(file, 'utf8'));
+    const f = path.resolve(dir, './wiafile.yml');
+    if (!all && fs.existsSync(f)) r = yaml.load(fs.readFileSync(f, 'utf8')); // eslint-disable-line
+
+    // r = yaml.load(fs.readFileSync(file, 'utf8'));
     // if (checkVer(r, ver))
     //   rs = {};
+    // 正在编译、发布的，直接返回正在编译、发布文件，不重新扫描
+    // 调用者需决定，是重新编译还是等待，发起编译、发布者，需处理编译完成或失败。
     let skip = false;
     if (r) {
       if (r.pub && r.pub.pubing && act === 'pub') {
-        R = r.pub.update || {};
+        R = {pubing: r.wia.pubing, update: r.wia.update};
         skip = true;
-      } else if (r.local && r.local.building && act === 'build')
-        skip = true;
+      } else if (r.local && r.local.building && act === 'build') {
+        R = {building: r.local.building, update: r.local.update};
+        skip = true; // 正在编译，跳过
+      }
 
       // 重新扫描文件，去掉之前的 update
       if (!skip) {
@@ -75,7 +86,7 @@ async function make(dir, act = 'build') {
       console.log('wiafile make getFile', {dir, rs, act});
 
       if (!_.isEmpty(rs)) {
-        R = rs.update || {};
+        R = rs; // .update || {};
         if (act === 'build') rs = {local: rs, wia: r && r.pub ? r.pub : {}};
         else rs = {pub: rs, local: r && r.local ? r.local : {}};
         console.log('wiafile', {dir, rs, act});
@@ -292,19 +303,20 @@ ${n.join('\n')}
  * 通过比较当前项目文件和文件记录中的文件MD5值，
  * 将变化的文件放入update，用于build or publish
  * @param {*} dir 文件路径
- * @param {*} rs 上次更新的hash文件对象
+ * @param {*} rs 保存所有文件对象
  * @param {*} act build or pub操作，最新的文件列表写入building or pubing
  */
 async function getFile(dir, rs, act) {
-  const tree = {};
   try {
     // 获得当前文件夹下的所有的文件夹和文件，赋值给目录和文件数组变量
-    const [dirs, files] = _(fs.readdirSync(dir)).partition(p =>
+    const [dirs, files] = _.partition(fs.readdirSync(dir), p =>
       fs.statSync(path.join(dir, p)).isDirectory()
     );
 
     // 对子文件夹进行递归，使用了await，串行同步执行
     let pms = [];
+    let r;
+    if (dirs) {
     for (let i = 0, ilen = dirs.length; i < ilen; i++) {
       const d = dirs[i];
       // eslint-disable-line
@@ -329,10 +341,13 @@ async function getFile(dir, rs, act) {
         pms.push(getFile(path.join(dir, d), rs, act));
       }
     }
-    let r = await Promise.all(pms);
+
+      if (!_.isEmpty(pms)) r = await Promise.all(pms);
+    }
 
     pms = [];
     // 当前目录下所有文件名进行同步hash计算
+    if (files) {
     // eslint-disable-next-line no-restricted-syntax
     for (const f of files) {
       // (pf.includes('.js') && v === pf)
@@ -355,12 +370,11 @@ async function getFile(dir, rs, act) {
       }
       if (pk) pms.push(hashFile(path.join(dir, f), rs, act));
     }
-    r = await Promise.all(pms);
+      if (!_.isEmpty(pms)) r = await Promise.all(pms);
+    }
   } catch (e) {
     console.log(`getFile exp:${e.message}`);
   }
-
-  return tree;
 }
 
 /**
@@ -419,8 +433,8 @@ function setUpdate(rs, f) {
 }
 
 /**
- * 生成指定文件的 MD5值，写入rs.cur对象，用于判断文件是否变化
- * 变化文件，写入 rs.update
+ * 生成指定文件的 MD5值，写入building 或 pubing对象
+ * 通过 MD5判断文件是否变化，变化文件写入 update，用于重新编译或发布
  * @param {*} f 文件
  * @param {*} rs 写入的数据集
  */
@@ -487,7 +501,7 @@ function hashFile(f, rs, act = 'build') {
  * @param {string} f
  */
 function save(rs, f) {
-  const yml = yaml.safeDump(rs);
+  const yml = yaml.dump(rs);
   fs.writeFileSync(f, yml, err => {
     if (err) console.log(`save exp:${err.message}`);
   });
@@ -497,6 +511,7 @@ function save(rs, f) {
  * 编译完成，building文件列表变为build或删除
  * 之前的build清除
  * @param {*} dir
+ * @param {*} succ 编译成功还是失败
  */
 function builded(dir, succ = true) {
   let R = {};
@@ -504,7 +519,7 @@ function builded(dir, succ = true) {
     dir = dir || process.cwd(); // 默认指向运行目录
     const f = path.resolve(dir, './wiafile.yml');
     let r = {};
-    if (fs.existsSync(f)) r = yaml.safeLoad(fs.readFileSync(f, 'utf8')); // require(file); // eslint-disable-line
+    if (fs.existsSync(f)) r = yaml.load(fs.readFileSync(f, 'utf8')); // require(file); // eslint-disable-line
     if (r && r.local && r.local.building) {
       const rs = {local: {}, wia: r.wia ? r.wia : {}};
       if (succ) {
@@ -537,7 +552,7 @@ function pubed(dir, succ = true) {
     dir = dir || process.cwd(); // 默认指向运行目录
     const f = path.resolve(dir, './wiafile.yml');
     let r = {};
-    if (fs.existsSync(f)) r = yaml.safeLoad(fs.readFileSync(f, 'utf8')); // require(file); // eslint-disable-line
+    if (fs.existsSync(f)) r = yaml.load(fs.readFileSync(f, 'utf8')); // require(file); // eslint-disable-line
     if (r && r.wia && r.wia.pubing) {
       const rs = {wia: {}, local: r.local ? r.local : {}};
       if (succ) {
@@ -561,12 +576,12 @@ function pubed(dir, succ = true) {
 }
 
 // make(); // 单独调试用
-async function build(dir) {
-  return make(dir, 'build');
+async function build(dir, cfg, all) {
+  return make(dir, cfg, 'build', all);
 }
 
-async function pub(dir) {
-  return make(dir, 'pub');
+async function pub(dir, cfg) {
+  return make(dir, cfg, 'pub');
 }
 
 module.exports = {build, builded, pub, pubed};

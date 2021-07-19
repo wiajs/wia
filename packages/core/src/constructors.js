@@ -5,36 +5,30 @@
 export default function (parameters = {}) {
   const {
     defaultSelector,
-    constructor,
+    constructor: Constructor,
     domProp,
     app,
     addMethods,
   } = parameters;
-
   const methods = {
     create(...args) {
-      if (app)
-        return new constructor(app, ...args);
-      return new constructor(...args);
+      if (app) return new Constructor(app, ...args);
+      return new Constructor(...args);
     },
     get(el = defaultSelector) {
-      if (el instanceof constructor)
-        return el;
+      if (el instanceof Constructor) return el;
       const $el = $(el);
-      if ($el.length === 0)
-        return undefined;
+      if ($el.length === 0) return undefined;
       return $el[0][domProp];
     },
     destroy(el) {
       const instance = methods.get(el);
-      if (instance && instance.destroy)
-        return instance.destroy();
+      if (instance && instance.destroy) return instance.destroy();
       return undefined;
     },
   };
-  
   if (addMethods && Array.isArray(addMethods)) {
-    addMethods.forEach((methodName) => {
+    addMethods.forEach(methodName => {
       methods[methodName] = (el = defaultSelector, ...args) => {
         const instance = methods.get(el);
         if (instance && instance[methodName])

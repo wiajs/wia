@@ -293,7 +293,7 @@ function getTag(value) {
   return ObjToString.call(value)
 }
 
-// 静态属性,可直接调用
+// 静态属性,可直接调用，识别 boolean、string、number、object、date、array、regexp、function
 $.type = function (obj) {
   return obj == null ? String(obj) : class2type[toString.call(obj)] || 'object';
 };
@@ -301,9 +301,9 @@ $.type = function (obj) {
 $.isWindow = function (o) {
   return o != null && o == o.window;
 };
-// 对象变量
+// 纯对象变量，不包含函数、Date、正则、数组等对象
 $.isObject = function (o) {
-  return $.type(o) === 'object'; // && o !== null && o.constructor && o.constructor === Object;
+  return $.type(o) === 'object'; 
 };
 $.isObj = $.isObject;
 
@@ -375,6 +375,18 @@ $.isDom = function (v) {
   return D.isD(v);
 };
 
+$.isDate = function (v) {
+  return $.type(o) === 'date'
+}
+
+$.isDateStr = function(v) {
+	return Date.parse(v) > 0
+}
+
+$.isNumStr = function(v) {
+	return !Number.isNaN(Number(v1))
+}
+
 $.contains = document.documentElement.contains
   ? function (parent, node) {
       return parent !== node && parent.contains(node);
@@ -437,6 +449,7 @@ $.forEach = function (els, cb) {
 $.grep = function (els, cb) {
   return filter.call(els, cb);
 };
+
 // Populate the class2type map
 $.each(
   'Boolean Number String Function Array Date RegExp Object Error'.split(' '),

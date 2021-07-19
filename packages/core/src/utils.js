@@ -12,20 +12,14 @@ const Utils = {
   },
   mdPreloaderContent: `
     <span class="preloader-inner">
-      <span class="preloader-inner-gap"></span>
-      <span class="preloader-inner-left">
-          <span class="preloader-inner-half-circle"></span>
-      </span>
-      <span class="preloader-inner-right">
-          <span class="preloader-inner-half-circle"></span>
-      </span>
+			<svg viewBox="0 0 36 36">
+				<circle cx="18" cy="18" r="16"></circle>
+			</svg>
     </span>
   `.trim(),
   iosPreloaderContent: `
     <span class="preloader-inner">
-      ${[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
-        .map(() => '<span class="preloader-inner-line"></span>')
-        .join('')}
+			${[0, 1, 2, 3, 4, 5, 6, 7].map(() => '<span class="preloader-inner-line"></span>').join('')}
     </span>
   `.trim(),
   auroraPreloaderContent: `
@@ -130,6 +124,19 @@ const Utils = {
     args.splice(0, 1);
     return $.assign(to, ...args);
   },
+  // 绑定类方法到类实例，复制类属性、方法到类
+	bindMethods(instance, obj) { 
+		Object.keys(obj).forEach((key) => {
+			if (this.isObject(obj[key])) {
+				Object.keys(obj[key]).forEach((subKey) => {
+					if (typeof obj[key][subKey] === 'function') {
+						obj[key][subKey] = obj[key][subKey].bind(instance);
+					}
+				});
+			}
+			instance[key] = obj[key];
+		});
+	},	
   colorHexToRgb(hex) {
     const h = hex.replace(
       /^#?([a-f\d])([a-f\d])([a-f\d])$/i,

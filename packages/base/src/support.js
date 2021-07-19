@@ -1,14 +1,23 @@
-const Support = (function Support() {
-  return {
-    touch: (function checkTouch() {
-      return !!((window.navigator.maxTouchPoints > 0) || ('ontouchstart' in window) || (window.DocumentTouch && document instanceof window.DocumentTouch));
-    }()),
+let _support;
 
-    pointerEvents: !!window.PointerEvent,
+const Support = (function Support() {
+  if (_support)
+    return _support;
+
+   _support = {
+    touch:  !!(
+      'ontouchstart' in window ||
+      (window.DocumentTouch && document instanceof window.DocumentTouch)
+    ),
+
+    pointerEvents:
+      !!window.PointerEvent &&
+      'maxTouchPoints' in window.navigator &&
+      window.navigator.maxTouchPoints >= 0,
 
     observer: (function checkObserver() {
       return ('MutationObserver' in window || 'WebkitMutationObserver' in window);
-    }()),
+    })(),
 
     passiveListener: (function checkPassiveListener() {
       let supportsPassive = false;
@@ -24,16 +33,17 @@ const Support = (function Support() {
         // No support
       }
       return supportsPassive;
-    }()),
+    })(),
 
     gestures: (function checkGestures() {
       return 'ongesturestart' in window;
-    }()),
+    })(),
 
     intersectionObserver: (function checkObserver() {
-      return ('IntersectionObserver' in window);
-    }()),
+      return 'IntersectionObserver' in window;
+    })(),
   };
-}());
+	return _support;
+})();
 
 export default Support;

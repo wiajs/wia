@@ -23,38 +23,30 @@ import SW from './sw';
 const Support = $.support;
 const Device = $.device;
 
+/**
+ * 应用类，每个wia应用从该类继承，由 首页加载创建或者路由创建
+ */
 class App extends Module {
-  constructor(params) {
-    super(params);
-    if (App.instance) {
-      throw new Error(
-        "App is already initialized and can't be initialized more than once"
-      );
-    }
+  static apps = {};
+  constructor(opt) {
+    super(opt);
 
-    const passedParams = $.extend({}, params);
+    const passedParams = $.extend({}, opt);
 
-    // App Instance
     const app = this;
     app.device = Device;
     app.support = Support;
 
-    App.instance = app;
-    $.app = app;
-    $.App = App;
-
     // Default
-    const defaults = {
-      version: '1.0.0',
-      id: 'pub.wia.testapp',
+    const def = {
+      version: '0.0.1',
       root: 'body',
       theme: 'auto',
       language: window.navigator.language,
       routes: [],
-      name: 'wia',
       lazyModulesPath: null,
       initOnDeviceReady: true,
-      init: true,
+      // init: true, // 路由加载时，为 false，，为true
       autoDarkTheme: false,
       iosTranslucentBars: true,
       iosTranslucentModals: true,
@@ -63,18 +55,17 @@ class App extends Module {
     };
 
     // Extend defaults with modules params
-    app.useModulesParams(defaults);
+    app.useModulesParams(def);
 
     // Extend defaults with passed params
-    app.params = $.extend(defaults, params);
+    app.params = $.extend(def, opt);
 
     const $rootEl = $(app.params.root);
 
     $.extend(app, {
-      // App Id
-      id: app.params.id,
-      // App Name
+      owner: app.params.owner,
       name: app.params.name,
+      id: `${app.params.owner}.${app.params.name}`,
       // App version
       version: app.params.version,
       // Routes
@@ -92,7 +83,7 @@ class App extends Module {
       theme: (function getTheme() {
         if (app.params.theme === 'auto') {
           if (Device.ios) return 'ios';
-          if (Device.desktop && Device.electron) return 'aurora';
+          if (Device.desktop) return 'aurora';
           return 'md';
         }
         return app.params.theme;
@@ -105,11 +96,6 @@ class App extends Module {
     // Save Root
     if (app.root && app.root[0]) {
       app.root[0].wia = app;
-    }
-
-    if (Device.ios && Device.webView) {
-      // Strange hack required for iOS 8 webview to work on inputs
-      window.addEventListener('touchstart', () => {});
     }
 
     app.touchEvents = {
@@ -130,7 +116,9 @@ class App extends Module {
         : 'mouseup',
     };
 
-    // 加载use插入的模块类相关方法（如：create、get、destroy），Load Use Modules
+    // 加载use插入的模块类，每个模块作为app的一个属性，合并到实例。
+    // 模块包括相关属性及方法（如：create、get、destroy）
+    // 调用每个模块的 create 方法
     app.useModules();
 
     // 初始化数据，Init Data & Methods
@@ -166,24 +154,32 @@ class App extends Module {
         app.init();
       }
     }
-    if (app.params.component || app.params.componentUrl) {
-      app.router.componentLoader(
-        app.params.component,
-        app.params.componentUrl,
-        {componentOptions: {el: app.root[0]}},
-        el => {
-          app.root = $(el);
-          app.root[0].f7 = app;
-          app.rootComponent = el.f7Component;
+
+    // 应用初始化，路由跳转时不执行初始化
           if (app.params.init) init();
-        }
-      );
-    } else if (app.params.init) {
-      init();
-    }
 
     // Return app instance
     return app;
+  }
+
+  // 首次加载事件，全局只触发一次
+  load(param) {
+    this.emit('local::load appLoad', param);
+  }
+
+  // 从后台切换到前台显示事件
+  show(url, data) {
+    this.emit('local::show appShow', url, data);
+  }
+
+  // 从前台显示切换到后台事件
+  hide() {
+    this.emit('local::hide appHide');
+  }
+
+  // 卸载应用事件
+  unload() {
+    this.emit('local::unload appUnload');
   }
 
   /**
@@ -236,10 +232,17 @@ class App extends Module {
     if (app.mq.light) app.mq.light.removeListener(app.colorSchemeListener);
   }
 
-  // 初始化
+  // 初始化，包括控制 html 样式，wia app 启动时需要执行，切换app时，不需要
   init() {
     const app = this;
     if (app.initialized) return app;
+
+    $.App = App;
+
+    if (Device.ios && Device.webView) {
+      // Strange hack required for iOS 8 webview to work on inputs
+      window.addEventListener('touchstart', () => {});
+    }
 
     app.root.addClass('framework7-initializing');
 
@@ -270,9 +273,7 @@ class App extends Module {
     app.root.addClass('framework7-root');
 
     // Theme class
-    $('html')
-      .removeClass('ios md aurora')
-      .addClass(app.theme);
+    $('html').removeClass('ios md aurora').addClass(app.theme);
 
     // iOS Translucent
     if (app.params.iosTranslucentBars && app.theme === 'ios' && Device.ios) {
@@ -292,6 +293,7 @@ class App extends Module {
     // Emit, init other modules
     app.initialized = true;
 
+    // 发起init 事件，模块 on 里面有 init方法的会被触发
     app.emit('init');
 
     return app;
@@ -375,14 +377,17 @@ function initStyle() {
   // Add html classes
   classNames.forEach(className => {
     html.classList.add(className);
+    // console.log({className});
   });
 }
+
+// App 类 静态方法、属性
 
 App.ModalMethods = Modals;
 App.ConstructorMethods = Constructors;
 // 动态加载模块（base里面已经内置动态加载，这个方法应该用不上）
 App.loadModule = loadModule;
-App.loadModules = function loadModules(modules) {
+App.loadModules = function (modules) {
   return Promise.all(modules.map(module => App.loadModule(module)));
 };
 

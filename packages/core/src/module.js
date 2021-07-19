@@ -12,13 +12,12 @@ class Module extends Event {
   useModuleParams(module, instanceParams) {
     if (module.params) {
       const originalParams = {};
-      Object.keys(module.params).forEach((paramKey) => {
-        if (typeof instanceParams[paramKey] === 'undefined')
-          return;
+      Object.keys(module.params).forEach(paramKey => {
+        if (typeof instanceParams[paramKey] === 'undefined') return;
         originalParams[paramKey] = $.extend({}, instanceParams[paramKey]);
       });
       $.extend(instanceParams, module.params);
-      Object.keys(originalParams).forEach((paramKey) => {
+      Object.keys(originalParams).forEach(paramKey => {
         $.extend(instanceParams[paramKey], originalParams[paramKey]);
       });
     }
@@ -26,9 +25,8 @@ class Module extends Event {
 
   useModulesParams(instanceParams) {
     const instance = this;
-    if (!instance.modules)
-      return;
-    Object.keys(instance.modules).forEach((moduleName) => {
+    if (!instance.modules) return;
+    Object.keys(instance.modules).forEach(moduleName => {
       const module = instance.modules[moduleName];
       // Extend params
       if (module.params) {
@@ -38,23 +36,24 @@ class Module extends Event {
   }
 
   /**
-   * 将扩展模块的相关事件加载到类实例
+   * 将扩展模块的相关方法、事件加载到类实例
    * @param {*} moduleName 扩展模块名称
    * @param {*} moduleParams 
    */
   useModule(moduleName = '', moduleParams = {}) {
     const instance = this;
-    if (!instance.modules)
-      return;
+    if (!instance.modules) return;
     
     // 从原型中获得的模块类引用
-    const module = typeof moduleName === 'string' ? instance.modules[moduleName] : moduleName;
-    if (!module)
-      return;
+    const module =
+      typeof moduleName === 'string'
+        ? instance.modules[moduleName]
+        : moduleName;
+    if (!module) return;
 
     // 扩展实例的方法和属性，Extend instance methods and props
     if (module.instance) {
-      Object.keys(module.instance).forEach((modulePropName) => {
+      Object.keys(module.instance).forEach(modulePropName => {
         const moduleProp = module.instance[modulePropName];
         if (typeof moduleProp === 'function') {
           instance[modulePropName] = moduleProp.bind(instance);
@@ -64,19 +63,18 @@ class Module extends Event {
       });
     }
 
-    // 将扩展模块中的on加载到事件侦听中，Add event listeners
+    // 将扩展模块中的on加载到实例的事件侦听中，比如 init 在实例初始化时被调用
     if (module.on && instance.on) {
-      Object.keys(module.on).forEach((moduleEventName) => {
+      Object.keys(module.on).forEach(moduleEventName => {
         instance.on(moduleEventName, module.on[moduleEventName]);
       });
     }
     
     // 加载扩展模块的vnodeHooks，Add vnode hooks
     if (module.vnode) {
-      if (!instance.vnodeHooks)
-        instance.vnodeHooks = {};
-      Object.keys(module.vnode).forEach((vnodeId) => {
-        Object.keys(module.vnode[vnodeId]).forEach((hookName) => {
+      if (!instance.vnodeHooks) instance.vnodeHooks = {};
+      Object.keys(module.vnode).forEach(vnodeId => {
+        Object.keys(module.vnode[vnodeId]).forEach(hookName => {
           const handler = module.vnode[vnodeId][hookName];
           if (!instance.vnodeHooks[hookName])
             instance.vnodeHooks[hookName] = {};
@@ -87,21 +85,20 @@ class Module extends Event {
       });
     }
 
-    // 模块实例化回调，Module create callback
+    // 执行模块的create方法，模块实例化回调，Module create callback
     if (module.create) {
       module.create.bind(instance)(moduleParams);
     }
   }
 
   /**
-   * 初始化实例原型中的所有扩展模块中定义的相关回调
+   * 实例创建初始化时，执行扩展模块中定义的相关回调
    * @param {*} modulesParams 
    */
   useModules(modulesParams = {}) {
     const instance = this;
-    if (!instance.modules)
-      return;
-    Object.keys(instance.modules).forEach((moduleName) => {
+    if (!instance.modules) return;
+    Object.keys(instance.modules).forEach(moduleName => {
       const moduleParams = modulesParams[moduleName] || {};
       instance.useModule(moduleName, moduleParams);
     });
@@ -109,32 +106,32 @@ class Module extends Event {
 
   static set components(components) {
     const Class = this;
-    if (!Class.use)
-      return;
+    if (!Class.use) return;
     Class.use(components);
   }
 
   /**
-   * 将模块类加载到指定类上，用于扩展类
+   * 将模块类装配到指定类的modules属性，用于扩展类
    * @param {*} module 模块类
    * @param  {...any} params 参数
    */
   static installModule(module, ...params) {
     const Class = this;
-    if (!Class.prototype.modules)
-      Class.prototype.modules = {};
-    const name = module.name || (`${Object.keys(Class.prototype.modules).length}_${$.now()}`);
+    if (!Class.prototype.modules) Class.prototype.modules = {};
+    const name =
+      module.name ||
+      `${Object.keys(Class.prototype.modules).length}_${$.now()}`;
     // 原型属性中引用该模块类，类实例
     Class.prototype.modules[name] = module;
     // 模块如果定义了原型，则将模块原型加载到类原型
     if (module.proto) {
-      Object.keys(module.proto).forEach((key) => {
+      Object.keys(module.proto).forEach(key => {
         Class.prototype[key] = module.proto[key];
       });
     }
     // 加载静态属性
     if (module.static) {
-      Object.keys(module.static).forEach((key) => {
+      Object.keys(module.static).forEach(key => {
         Class[key] = module.static[key];
       });
     }

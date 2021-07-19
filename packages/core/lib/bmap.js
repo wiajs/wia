@@ -158,7 +158,7 @@ export default class Map extends Event {
    * @param {boolean} around 查询周边
    * @param {array} points 其他坐标
    */
-  async show(center = null, around = false, points = null) {
+  async show(center = null, around = true, points = null) {
     const map = await this.getMap();
     this.showMap(center, around, points);
   }
@@ -171,17 +171,17 @@ export default class Map extends Event {
    * @param {Function} fail 失败执行
    * @param {Function} complete 完成后执行
    */
-  // getLocWx(type, success, fail, complete) {
-  //   (type = type || 'gcj02'), (success = success || function () {});
-  //   fail = fail || function () {};
-  //   complete = complete || function () {};
-  //   wx.getLocation({
-  //     type: type,
-  //     success: success,
-  //     fail: fail,
-  //     complete: complete,
-  //   });
-  // }
+  getLocWx(type, success, fail, complete) {
+    (type = type || 'gcj02'), (success = success || function () {});
+    fail = fail || function () {};
+    complete = complete || function () {};
+    wx.getLocation({
+      type: type,
+      success: success,
+      fail: fail,
+      complete: complete,
+    });
+  }
 
   /**
    * 获取当前位置经纬度数组，百度坐标格式

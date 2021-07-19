@@ -38,8 +38,8 @@ Object.keys(Store).forEach(k => {
   $.store[k] = Store[k];
 });
 
-// 将 module 模块中的方法加载到 $.wms
-$.M = {};
+// 将 module 模块中的方法加载到 $.M
+$.M = Module.load;
 Object.keys(Module).forEach(k => {
   $.M[k] = Module[k];
 });

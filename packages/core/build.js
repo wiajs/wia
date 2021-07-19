@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
-const terser = require('terser');
+const { minify } = require('terser');
 const rollup = require('rollup');
 
 const env = process.env.NODE_ENV || 'development';
@@ -29,15 +29,20 @@ function buildEntry({input, output}) {
   return rollup
     .rollup(input)
     .then(bundle => bundle.write(output)) // bundle.generate(output))
-    .then(bundle => {
+    .then(async bundle => {
       // console.log(bundle)
       const {code} = bundle.output[0];
       report(code, file);
 
       if (isProd) {
-        const minified =
+        const minCode =
           // (banner ? banner + '\n' : '') +
-          terser.minify(code, {
+/* 					await minify(code, {
+            sourceMap: false,
+          });
+ */          
+					await minify(code, {
+            sourceMap: false,
             toplevel: true,
             output: {
               ascii_only: true,
@@ -45,9 +50,9 @@ function buildEntry({input, output}) {
             compress: {
               pure_funcs: ['makeMap'],
             },
-          }).code;
+          });
 
-        return write(file.replace('.js', '.min.js'), minified, true);
+				return write(file.replace('.js', '.min.js'), minCode.code, true);
       }
       // else {
       //   return write(file, code);
