@@ -742,7 +742,8 @@ function styles() {
 }
 
 function css(props, value) {
-  const REGEXP_SUFFIX = /^width|height|left|top|marginLeft|marginTop|paddingLeft|paddingTop$/;
+  const REGEXP_SUFFIX =
+    /^width|height|left|top|marginLeft|marginTop|paddingLeft|paddingTop$/;
 
   let i;
   if (arguments.length === 1) {
@@ -1269,10 +1270,10 @@ function parentNode(sel) {
  * 选择器为空，则返回 空
  */
 function closest(selector) {
-  let closest = this; // eslint-disable-line
+  let sel = this; // eslint-disable-line
   if (typeof selector === 'undefined') return new Dom([]);
 
-  if (!closest.is(selector)) {
+  if (!sel.is(selector)) {
     const parents = []; // eslint-disable-line
 
     for (let i = 0; i < this.length; i += 1) {
@@ -1288,17 +1289,21 @@ function closest(selector) {
     return new Dom([]);
   }
 
-  return closest;
+  return sel;
+}
+
+function upper(sel) {
+  return this::closest(sel);
 }
 
 /**
  * 后代中所有适合选择器的元素
- * @param {*} selector
+ * @param {*} sel
  */
-function find(selector) {
+function find(sel) {
   const foundElements = [];
   for (let i = 0; i < this.length; i += 1) {
-    const found = this[i].querySelectorAll(selector);
+    const found = this[i].querySelectorAll(sel);
     for (let j = 0; j < found.length; j += 1) {
       foundElements.push(found[j]);
     }
@@ -1308,30 +1313,30 @@ function find(selector) {
 
 /**
  * 后代中单个适合选择器的元素
- * @param {*} selector
+ * @param {*} sel
  */
-function findNode(selector) {
+function findNode(sel) {
   const R = [];
   for (let i = 0; i < this.length; i += 1) {
-    const found = this[i].querySelector(selector);
+    const found = this[i].querySelector(sel);
     if (found) R.push(found);
   }
-  return new Dom(R, selector);
+  return new Dom(R, sel);
 }
 
 /**
  * 返回所有dom的所有符合条件的直接子元素，不包括文本节点
- * @param {*} selector
+ * @param {*} sel
  */
-function children(selector) {
+function children(sel) {
   const cs = []; // eslint-disable-line
   for (let i = 0; i < this.length; i += 1) {
     const childs = this[i].children;
 
     for (let j = 0; j < childs.length; j += 1) {
-      if (!selector) {
+      if (!sel) {
         cs.push(childs[j]);
-      } else if ($(childs[j]).is(selector)) cs.push(childs[j]);
+      } else if ($(childs[j]).is(sel)) cs.push(childs[j]);
     }
   }
   return new Dom($.uniq(cs));
@@ -1339,24 +1344,38 @@ function children(selector) {
 
 /**
  * 返回被选元素的第一个符合条件直接子元素，不包括文本节点
- * @param {*} selector
+ * @param {*} sel
  */
-function childNode(selector) {
+function childNode(sel) {
+  return this::child(sel);
+}
+
+/**
+ * 返回被选元素的第一个符合条件直接单个子元素，不包括文本节点
+ * 或者 替换节点的所有子元素
+ * @param {*} sel
+ */
+function child(sel) {
+  if ($.isDom(sel)) {
+    this.empty().append(sel);
+    return this;
+  } else {
   const cs = []; // eslint-disable-line
   for (let i = 0; i < this.length; i += 1) {
     const childs = this[i].children;
 
     for (let j = 0; j < childs.length; j += 1) {
-      if (!selector) {
+        if (!sel) {
         cs.push(childs[j]);
         break;
-      } else if ($(childs[j]).is(selector)) {
+        } else if ($(childs[j]).is(sel)) {
         cs.push(childs[j]);
         break;
       }
     }
   }
-  return new Dom(cs, selector);
+    return new Dom(cs, sel);
+  }
 }
 
 function remove() {
@@ -1411,7 +1430,7 @@ function hasChild() {
  */
 function firstChild() {
   if (!this.dom || this.dom.children.length === 0) return null;
-  return new Dom([this.dom.children[0]]); ;
+  return new Dom([this.dom.children[0]]);
 }
 
 /**
@@ -1667,6 +1686,7 @@ export {
   parentNode,
   parents,
   closest,
+  upper, // 等同于 closest
   qu,
   qus,
   att,
@@ -1682,6 +1702,7 @@ export {
   hasChild,
   children,
   childNode,
+  child, // 替代 childNode
   firstChild,
   lastChild,
   childCount,
