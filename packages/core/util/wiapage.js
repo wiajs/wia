@@ -9,7 +9,6 @@ const utils = require('utility');
 const fs = require('fs');
 
 let _cfg = {};
-let _src = '';
 
 /**
  * 检查指定项目文件是否更新，如更新则重新打包，并自动部署到腾讯云CDN
@@ -42,7 +41,7 @@ async function pages(dir) {
     });
 
     // page下的文件写入pages.js文件
-    if (!_.isEmpty(pf)) R = pagefile(pf);
+    if (!_.isEmpty(pf)) R = makeFile(pf, 'pages', dir);
   } catch (err) {
     console.log(`pages exp:${err.message}`);
   }
@@ -81,11 +80,11 @@ async function getPage(dir) {
 
   try {
     dir = dir || process.cwd();
-    _src = path.join(dir, './src');
-    _cfg = require(path.join(_src, './config/app.js'));
+    const src = path.join(dir, './src');
+    _cfg = require(path.join(src, './config/app.js'));
     const rs = [];
     // 获取目标项目目录、子目录下的文件MD5对象
-    await getFile(path.join(_src, './page'), rs);
+    await getFile(path.join(src, './page'), rs, src);
 
     // 有js文件变化，html、less 暂未处理
     if (!_.isEmpty(rs)) {
@@ -98,6 +97,7 @@ async function getPage(dir) {
 
         // eslint-disable-next-line
         for (let pf of _cfg.file) {
+          // console.log({v, pf});
           // eslint-disable-line
           if (
             (pf.includes('.js') && v === pf) ||
@@ -121,7 +121,7 @@ async function getPage(dir) {
             }
           }
         }
-        console.log('getPage', {pk, v});
+        // console.log('getPage', {pk, v});
         // 需编译文件
         if (pk) {
           R.push(v);
@@ -149,10 +149,15 @@ function hash(tx) {
 
 /**
  * 将page中的js文件创建到pages.js中，方便调试
+ * 也用来创建编译入口文件（entry.js），webpack最新5.xx版本自动将入口文件改为直接运行代码！
+ * wia需要模块化，创建入口文件来解决该问题。
  * @param {*} pf
  */
-function pagefile(pf) {
+function makeFile(pf, name, dir) {
   if (_.isEmpty(pf)) return '';
+
+  dir = dir || process.cwd();
+  const src = path.join(dir, './src');
 
   const p = [];
   Object.keys(pf).forEach(k => {
@@ -160,16 +165,16 @@ function pagefile(pf) {
     p.push(`import ${k} from '${f}';`);
   });
 
-  const n = [];
+  const ns = [];
   Object.keys(pf).forEach(k => {
-    const name = k[0].toLowerCase() + k.slice(1);
-    n.push(`    const ${name} = new ${k}();`);
+    const n = k[0].toLowerCase() + k.slice(1);
+    ns.push(`    const ${n} = new ${k}();`);
   });
 
   p.push(`
-export default class Pages {
+export default class ${name[0].toUpperCase() + name.slice(1)} {
   init() {
-${n.join('\n')}
+${ns.join('\n')}
   }
 }
 `);
@@ -177,7 +182,7 @@ ${n.join('\n')}
   // 将内容写入page.js 文件
   const ps = p.join('\n');
   if (!_.isEmpty(ps)) {
-    const f = path.join(_src, './pages.js');
+    const f = path.join(src, `./${name}.js`);
     // 获取当前页面共用模块
     let lastH = '';
     if (fs.existsSync(f)) {
@@ -185,12 +190,14 @@ ${n.join('\n')}
       lastH = hash(tx);
     }
     // 有变化，则更新pages文件
-    if (hash(ps) !== lastH)
+    if (hash(ps) !== lastH) {
+      // console.log({f, ps});
       fs.writeFileSync(
         f,
         ps,
         e => e && console.log(`save ${f} exp:${e.message}`)
       );
+  }
   }
 
   return ps;
@@ -203,7 +210,7 @@ ${n.join('\n')}
  * @param {*} dir 文件路径
  * @param {*} rs 上次更新的hash文件对象
  */
-async function getFile(dir, rs) {
+async function getFile(dir, rs, src) {
   const tree = {};
   try {
     // 获得当前文件夹下的所有的文件夹和文件，赋值给目录和文件数组变量
@@ -213,7 +220,7 @@ async function getFile(dir, rs) {
 
     // 对子文件夹进行递归，使用了Promise.all，并发执行
     const pms = [];
-    dirs.forEach(v => pms.push(getFile(path.join(dir, v), rs)));
+    dirs.forEach(v => pms.push(getFile(path.join(dir, v), rs, src)));
     await Promise.all(pms);
 
     // 当前目录下所有文件名进行同步hash计算
@@ -222,7 +229,7 @@ async function getFile(dir, rs) {
       if (f.includes('.js') && rs) {
         let file = path.join(dir, f);
         // 去掉项目根路径
-        file = file.replace(_src, '');
+        file = file.replace(src, '');
         if (file.startsWith(path.sep)) file = file.substr(1);
 
         if (path.sep !== '/') file = file.replace(/\\/gim, '/'); // 统一路径为/，方便处理
@@ -240,13 +247,13 @@ async function getFile(dir, rs) {
 function clear(dir) {
   try {
     dir = dir || process.cwd();
-    _src = path.join(dir, './src');
+    const src = path.join(dir, './src');
     const ps = `
 export default class Pages {
 }
 `;
     let lastH = '';
-    const f = path.join(_src, './pages.js');
+    const f = path.join(src, './pages.js');
     if (fs.existsSync(f)) {
       const tx = fs.readFileSync(f, 'utf8');
       lastH = hash(tx);
@@ -268,4 +275,4 @@ export default class Pages {
 
 // pages(); // 单独调试用
 
-module.exports = {pages, pack, clear};
+module.exports = {pages, pack, clear, makeFile};
