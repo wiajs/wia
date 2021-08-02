@@ -74,9 +74,10 @@ class App extends Module {
       language: app.params.language,
       // Root
       root: $rootEl,
+			$el: $rootEl,
       cfg: app.params.cfg, // app config
-			api: app.params.api, // api config
-			
+      api: app.params.api, // api config
+
       // RTL
       rtl: $rootEl.css('direction') === 'rtl',
       // Theme
@@ -132,7 +133,7 @@ class App extends Module {
       app.mq.dark = window.matchMedia(DARK);
       app.mq.light = window.matchMedia(LIGHT);
     }
-    app.colorSchemeListener = function({matches, media}) {
+    app.colorSchemeListener = function ({matches, media}) {
       if (!matches) {
         return;
       }
@@ -156,7 +157,7 @@ class App extends Module {
     }
 
     // 应用初始化，路由跳转时不执行初始化
-          if (app.params.init) init();
+    if (app.params.init) init();
 
     // Return app instance
     return app;
