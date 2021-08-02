@@ -7,7 +7,7 @@
 const {Dom} = window.$;
 
 const emptyArray = [];
-const elementDisplay = {}; 
+const elementDisplay = {};
 
 function ready(cb) {
   if (/complete|loaded|interactive/.test(document.readyState) && document.body)
@@ -1232,7 +1232,7 @@ function parents(selector) {
       if (selector) {
         if ($(parent).is(selector)) parents.push(parent);
       } else parents.push(parent);
-      
+
       parent = parent.parentNode;
     }
   }
@@ -1247,40 +1247,44 @@ function parentNode(sel) {
   const R = [];
 
   for (let i = 0; i < this.length; i += 1) {
-    let parent = this[i].parentNode; 
+    let parent = this[i].parentNode;
     while (parent) {
       if (sel) {
-				if ($(parent).is(sel)) {
-					R.push(parent);
-					return new Dom(R, sel);	
-				}
-			} else { 
-				R.push(parent);
-				return new Dom(R, sel);				
-			}
+        if ($(parent).is(sel)) {
+          R.push(parent);
+          return new Dom(R, sel);
+        }
+      } else {
+        R.push(parent);
+        return new Dom(R, sel);
+      }
 
       parent = parent.parentNode;
     }
   }
-	return new Dom(R, sel);
+  return new Dom(R, sel);
 }
 
 /**
  * 从当前元素开始沿 DOM 树向上,获得匹配选择器的第一个祖先元素。
+ * 当前节点符合，则返回当前节点
  * 选择器为空，则返回 空
  */
-function closest(selector) {
-  let sel = this; // eslint-disable-line
-  if (typeof selector === 'undefined') return new Dom([]);
+function closest(sel) {
+  let self = this; // eslint-disable-line
+  if (typeof sel === 'undefined') return new Dom([]);
 
-  if (!sel.is(selector)) {
+  // ~开头，按 name 属性查找
+	if (sel[0] === '~') sel = `[name=${sel.substr(1)}]`;
+	
+	if (!self.is(sel)) {
     const parents = []; // eslint-disable-line
 
     for (let i = 0; i < this.length; i += 1) {
       let parent = this[i].parentNode; // eslint-disable-line
       while (parent) {
-        const n = $(parent);
-        if (n.is(selector)) return n;
+        const d = $(parent);
+        if (d.is(sel)) return d;
 
         parent = parent.parentNode;
       }
@@ -1289,7 +1293,7 @@ function closest(selector) {
     return new Dom([]);
   }
 
-  return sel;
+  return self;
 }
 
 function upper(sel) {
@@ -1360,20 +1364,20 @@ function child(sel) {
     this.empty().append(sel);
     return this;
   } else {
-  const cs = []; // eslint-disable-line
-  for (let i = 0; i < this.length; i += 1) {
-    const childs = this[i].children;
+    const cs = []; // eslint-disable-line
+    for (let i = 0; i < this.length; i += 1) {
+      const childs = this[i].children;
 
-    for (let j = 0; j < childs.length; j += 1) {
+      for (let j = 0; j < childs.length; j += 1) {
         if (!sel) {
-        cs.push(childs[j]);
-        break;
+          cs.push(childs[j]);
+          break;
         } else if ($(childs[j]).is(sel)) {
-        cs.push(childs[j]);
-        break;
+          cs.push(childs[j]);
+          break;
+        }
       }
     }
-  }
     return new Dom(cs, sel);
   }
 }
