@@ -491,13 +491,17 @@ $.qn = function qn(name, ctx) {
 
 // 返回指定name数组, 便于 forEach
 // 效率高于qus
-$.qns = function (sel, ctx) {
+$.qns = function (name, ctx) {
   var R = null;
   if (ctx)
-    R = D.isD(ctx) ? ctx[0].getElementsByName(sel) : ctx.getElementsByName(sel);
-  else R = document.getElementsByName(sel);
-  if (R && R.length > 0) return slice.call(R);
-  else return [];
+    R = $.qus(`[name="${name}"]`, ctx);
+  else {
+		R = document.getElementsByName(name);
+		if (R && R.length > 0) R = slice.call(R);
+		else R = [];
+	}
+	
+	return R;
 };
 
 // 返回指定class name数组, 便于 forEach
