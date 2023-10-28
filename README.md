@@ -50,6 +50,6 @@ Detailed changes for each release are documented in the [release notes](https://
 
 ## License
 
-[MIT](http://opensource.org/licenses/MIT)
+[ELv2](https://www.elastic.co/cn/licensing/elastic-license)
 
 Copyright (c) 2020-present, Yan (Sibyl) Yu
