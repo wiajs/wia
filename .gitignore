@@ -1,6 +1,4 @@
-packages/base/dist/
-packages/core/dist/
-packages/dom/dist/
+packages/*/dist/
 
 # OS generated files #
 ######################

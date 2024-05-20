@@ -1,16 +1,27 @@
 {
   "name": "@wiajs/dom",
-  "version": "0.1.14",
-  "description": "Fork from jquery/zepto and dom7. Minimalistic JavaScript library for DOM manipulation",
-  "main": "index.js",
-  "types": "dist/dom.d.ts",
+  "version": "1.2.13",
+  "description": "Fork from jquery/zepto/dom7. JavaScript library for DOM manipulation",
+  "main": "./dist/dom.cjs",
+  "module": "./dist/dom.mjs",
+  "types": "./types/dom.d.ts",
+  "exports": {
+    ".": {
+      "require": "./dist/dom.cjs",
+      "import": "./dist/dom.mjs",
+      "default": "./dist/dom.mjs",
+      "types": "./types/dom.d.ts"
+    }
+  },
   "scripts": {
-    "build": "cross-env NODE_ENV=production gulp build",
-    "build-dev": "cross-env NODE_ENV=development gulp build"
+    "build": "cross-env NODE_ENV=production gulp build -f gulpfile.mjs",
+    "build:dev": "cross-env NODE_ENV=development gulp build -f gulpfile.mjs",
+    "dev": "swc --config-file ./.swcrc ./src -w -d bin",
+    "release": "bash release.sh"    
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/wiajs/wia.git"
+    "url": "https://github.com/wiajs/dom.git"
   },
   "keywords": [
     "wia",
@@ -29,24 +40,20 @@
     "access": "public"
   },
   "devDependencies": {
-    "babel-eslint": "^10.0.2",
-    "cross-env": "^5.2.0",
-    "debug": "^4.1.1",
-    "eslint": "^6.1.0",
-    "eslint-config-airbnb": "^17.1.1",
-    "eslint-config-airbnb-base": "^13.2.0",
-    "eslint-plugin-graphql": "^3.0.3",
-    "eslint-plugin-import": "^2.18.2",
-    "eslint-plugin-jsx-a11y": "^6.2.3",
-    "eslint-plugin-react": "^7.14.3",
+    "@rollup/plugin-babel": "^6.0.3",
+    "@rollup/plugin-commonjs": "^25.0.1",
+    "@rollup/plugin-node-resolve": "^15.1.0",
+    "@rollup/plugin-replace": "^5.0.2",
+    "@rollup/plugin-terser": "^0.4.3",
+    "@wiajs/base": "^1.0.1",
+    "@wiajs/util": "^3.4.20",
+    "@wiajs/signal": "^3.4.20",
+    "cross-env": "^7.0.3",
+    "debug": "^4.3.4",
+    "fs-extra": "^11.1.1",
     "gulp": "^4.0.2",
-    "rollup": "^1.18.0",
-    "rollup-plugin-babel": "^4.3.3",
-    "rollup-plugin-commonjs": "^10.1.0",
-    "rollup-plugin-node-resolve": "^5.2.0",
-    "rollup-plugin-replace": "^2.2.0",
-    "terser": "^4.4.0"
+    "rollup": "^3.25.1",
+    "terser": "^5.18.0"
   },
-  "dependencies": {
-  }
+  "dependencies": {}
 }

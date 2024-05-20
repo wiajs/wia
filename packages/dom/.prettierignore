@@ -18,10 +18,9 @@ package.json
 package-lock.json
 yarn.lock
 
-node_modules/
-/packages/*/dist/
-/packages/*/doc/
+node_modules
+dist
+bin
+doc
+.vscode
 
-/dist/
-/doc/
-/.vscode/

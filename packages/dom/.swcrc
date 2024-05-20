@@ -1,0 +1,57 @@
+[{
+  "$schema": "https://json.schemastore.org/swcrc",
+  "test": ".*.js$",
+  "exclude": [".*\\.map$"],
+  "jsc": {
+    "parser": {
+      "syntax": "ecmascript", // "typescript"
+      "jsx": false,
+      "dynamicImport": false,
+      "privateMethod": true,
+      "functionBind": false,
+      "exportDefaultFrom": false,
+      "exportNamespaceFrom": false,
+      "decorators": true,
+      "decoratorsBeforeExport": false,
+      "topLevelAwait": false,
+      "importMeta": false
+    },
+    "transform": {
+      "decoratorVersion": "2022-03" // "2021-12" (default)
+    },
+    "target": "es2020", // es5,es6,es2020,es2021,es2022
+    "loose": true,
+    "externalHelpers": false,
+    "keepClassNames": true // 保留原始类名
+  },
+  "module": {
+    "type": "commonjs" // 输出模块类型
+  },
+  "minify": false, // 压缩代码
+  "sourceMaps": false 
+},
+{
+  "$schema": "https://json.schemastore.org/swcrc",
+  "test": ".*.ts$",
+  "exclude": [".*\\.map$"],
+  "jsc": {
+    "parser": {
+      "syntax": "typescript",
+      "tsx": false,
+      "decorators": true,
+      "dynamicImport": false
+    },
+    "transform": {
+      "decoratorVersion": "2022-03"
+    },
+    "target": "es2022", // es5,es6,es2020,es2021,es2022
+    "loose": true,
+    "externalHelpers": false,
+    "keepClassNames": true // 保留原始类名
+  },
+  "module": {
+    "type": "commonjs"
+  },
+  "minify": false, // 压缩代码
+  "sourceMaps": false 
+}]
