@@ -6,5 +6,8 @@ module.exports = {
   bracketSpacing: false, // 大括号内的首尾需要空格
   trailingComma: 'es5', // 末尾是否需要逗号
   jsxBracketSameLine: true, // jsx 标签的反尖括号不换行
-  arrowParens: 'avoid' // 尽可能省略箭头函数参数括号。 示例：x => x
+  arrowParens: 'avoid', // 尽可能省略箭头函数参数括号。 示例：x => x
+  printWidth: 100, // 代码换行长度
+  endOfLine: 'auto',
+  // jsxSingleQuote: false, // jsx 使用双引号
 };

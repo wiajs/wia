@@ -5,3 +5,4 @@ __mocks__
 .version
 node_modules
 src
+script

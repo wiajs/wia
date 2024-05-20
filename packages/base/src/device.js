@@ -3,9 +3,8 @@ import Support from './support';
 let _device;
 
 const Device = (function Device() {
-  // ÒÑ¾­ÔËËã£¬Ö±½Ó·µ»Ø£¬±ÜÃâÖØ¸´ÔËËã
-  if (_device)
-    return _device;
+  // å·²ç»è¿ç®—ï¼Œç›´æŽ¥è¿”å›žï¼Œé¿å…é‡å¤è¿ç®—
+  if (_device) return _device;
 
   const platform = window.navigator.platform;
   const ua = window.navigator.userAgent;
@@ -20,12 +19,11 @@ const Device = (function Device() {
     ipad: false,
     edge: false,
     ie: false,
-		wx: false,
+    wx: false,
     firefox: false,
     macos: false,
     windows: false,
     cordova: !!(window.cordova || window.phonegap),
-    phonegap: !!(window.cordova || window.phonegap),
     electron: false,
     capacitor: !!window.Capacitor,
     nwjs: false,
@@ -37,10 +35,12 @@ const Device = (function Device() {
   const android = ua.match(/(Android);?[\s\/]+([\d.]+)?/); // eslint-disable-line
   let ipad = ua.match(/(iPad).*OS\s([\d_]+)/);
   const ipod = ua.match(/(iPod)(.*OS\s([\d_]+))?/);
-  const iphone = !ipad && ua.match(/(iPhone\sOS|iOS|iPhone;\sCPU\sOS)\s([\d_]+)/);
+  const iphone =
+    !ipad && ua.match(/(iPhone\sOS|iOS|iPhone;\sCPU\sOS)\s([\d_]+)/);
   const ie = ua.indexOf('MSIE ') >= 0 || ua.indexOf('Trident/') >= 0;
   const edge = ua.indexOf('Edge/') >= 0;
   const firefox = ua.indexOf('Gecko/') >= 0 && ua.indexOf('Firefox/') >= 0;
+  // windowsæµè§ˆå™¨æ¨¡æ‹Ÿï¼Œéƒ½æ˜¯Win32
   const windows = platform === 'Win32';
   const electron = ua.toLowerCase().indexOf('electron') >= 0;
   const nwjs =
@@ -81,7 +81,7 @@ const Device = (function Device() {
   device.firefox = firefox;
 
   // Android
-  if (android && !windows) {
+  if (android) {
     device.os = 'android';
     device.osVersion = android[2];
     device.android = true;
@@ -117,7 +117,8 @@ const Device = (function Device() {
       (iphone || ipad || ipod) &&
       (ua.match(/.*AppleWebKit(?!.*Safari)/i) || window.navigator.standalone)
     ) ||
-    (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+    (window.matchMedia &&
+      window.matchMedia('(display-mode: standalone)').matches);
   device.webview = device.webView;
   device.standalone = device.webView;
 
@@ -153,10 +154,10 @@ const Device = (function Device() {
     return theme;
   };
 
-	// weixin
-	device.wechat = /MicroMessenger/i.test(ua);
-	device.weixin = device.wechat;
-	device.wx = device.wechat;
+  // weixin
+  device.wechat = /MicroMessenger/i.test(ua);
+  device.weixin = device.wechat;
+  device.wx = device.wechat;
 
   _device = device;
   // Export object

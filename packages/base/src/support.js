@@ -1,3 +1,7 @@
+/** 
+ * 是否支持触摸 touch等功能
+*/
+
 let _support;
 
 const Support = (function Support() {

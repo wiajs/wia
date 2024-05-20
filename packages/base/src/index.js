@@ -11,6 +11,7 @@
 import $ from './$';
 import * as Event from './event';
 import * as Store from './store';
+import * as Session from './session';
 import * as Ajax from './ajax';
 import * as Module from './module';
 import device from './device';
@@ -36,6 +37,12 @@ Object.keys(Ajax).forEach(k => {
 $.store = {};
 Object.keys(Store).forEach(k => {
   $.store[k] = Store[k];
+});
+
+// 将 store 模块中的方法加载到 $.store
+$.session = {};
+Object.keys(Session).forEach(k => {
+  $.session[k] = Store[k];
 });
 
 // 将 module 模块中的方法加载到 $.M

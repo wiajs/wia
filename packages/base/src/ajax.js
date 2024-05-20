@@ -1,6 +1,6 @@
 /**
  * 创建xmlHttpRequest,返回xmlHttpRequest实例,根据不同的浏览器做兼容
-*/
+ */
 function getXhr() {
   let rs = null;
 
@@ -49,7 +49,7 @@ const parseSuccess = rs => {
 function get(url, param, header) {
   const pm = new Promise((res, rej) => {
     const xhr = getXhr();
-    xhr.onreadystatechange = function() {
+    xhr.onreadystatechange = function () {
       if (xhr.readyState === 4) {
         if (xhr.status === 200) {
           const rs = parseSuccess(xhr.responseText);
@@ -67,7 +67,7 @@ function get(url, param, header) {
           .map(k => `${k}=${data[k]}`)
           .sort()
           .join('&');
-      
+
       xhr.open('GET', `${url}?${param}`, true);
     } else xhr.open('GET', url, true);
 
@@ -99,7 +99,7 @@ function post(url, data, header) {
           const rs = parseSuccess(xhr.responseText);
           res(rs);
         } else rej(parseError(xhr));
-          }
+      }
     };
 
     xhr.onerror = e => {
@@ -111,8 +111,8 @@ function post(url, data, header) {
     let param = data;
 
     if (data && data instanceof FormData) {
-    // 发送 FormData 数据, 会自动设置为 multipart/form-data
-    // xhr.setRequestHeader('Content-Type', 'multipart/form-data; boundary=AaB03x');
+      // 发送 FormData 数据, 会自动设置为 multipart/form-data
+      // xhr.setRequestHeader('Content-Type', 'multipart/form-data; boundary=AaB03x');
     } else if (data && typeof data === 'object') {
       // param = Object.keys(data).map(k => `${k}=${data[k]}`).sort().join('&');
       param = JSON.stringify(data);

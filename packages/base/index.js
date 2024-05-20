@@ -1,5 +1,5 @@
 if (process.env.NODE_ENV === 'production') {
-  module.exports = require('./dist/base.common.min.js')
+  module.exports = require('./dist/base.cmn.js')
 } else {
-  module.exports = require('./dist/base.common.js')
+  module.exports = require('./dist/base.cmn.js')
 }

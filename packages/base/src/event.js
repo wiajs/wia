@@ -1,5 +1,8 @@
 /**
- * globle event 全局事件模块
+ * 基于 $的event 事件模块
+ * 与 dom、Core/Event 中的事件不同
+ * dom 事件用于 浏览器 内置或自定义事件控制，全局范围
+ * Core/Event 类 用于组件事件控制，局部范围
  * 由于整个App有效，因此要求事件名称为 “模块名:函数名:事件名”，避免冲突。
  * 比如在 lazy模块中，通过 $.emit('lazy:src:before', node) 发射事件，
  * 引用该类代码，通过 $.on('lazy:src:before', fn) 获得事件触发回调。

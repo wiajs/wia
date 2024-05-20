@@ -1,7 +1,7 @@
 /********************
 ! ** * 动态模块管理 ** * !
 ***********************/
-   
+
 // The modules object
 const _m = {}; // 已下载并缓存的模块，通过add添加，在load时被执行，并返回模块输出部分
 
@@ -30,7 +30,7 @@ function load(id) {
   // 执行每个模块的代码
   if (_m[id])
     // 执行函数，this指针指向 window
-    // 比如 箭头函数内的this 
+    // 比如 箭头函数内的this
     _m[id](m, m.exports, load);
   else alert(`load module [${id}] not exist!`);
 
@@ -73,11 +73,11 @@ function fakeNs(value, mode) {
   if (mode & 1)
     // eslint-disable-line
     value = load(value);
-  
+
   if (mode & 8)
     // eslint-disable-line
     return value;
-  
+
   if (
     mode & 4 && // eslint-disable-line
     typeof value === 'object' &&
@@ -96,15 +96,15 @@ function fakeNs(value, mode) {
 
   if (mode & 2 && typeof value !== 'string')
     // eslint-disable-line
-    for (let key in value) 
+    for (let key in value)
       addProp(
         ns,
         key,
         function (key) {
-        return value[key];
+          return value[key];
         }.bind(null, key)
       );
-  
+
   return ns;
 }
 
@@ -118,7 +118,7 @@ function getExport(module) {
   }
 
   const getter = module && module.__esModule ? getDefault : getModuleExports;
-  
+
   addProp(getter, 'a', getter);
 
   return getter;
@@ -131,7 +131,7 @@ function getExport(module) {
  */
 function add(ms) {
   Object.keys(ms).forEach(k => {
-    if (k !== 'R' && k !== 'M') {      
+    if (k !== 'R' && k !== 'M') {
       let r = ms[k];
       // 函数
       const ps = r.match(
@@ -171,7 +171,7 @@ function add(ms) {
           r = r.replace(rg, '');
           r = r.substring(0, r.lastIndexOf('}'));
         }
-      // eslint-disable-next-line
+        // eslint-disable-next-line
         r = new Function(ps[1], ps[2], r);
       } else if (ps && ps[3] !== '') {
         // 三个参数
@@ -188,10 +188,10 @@ function add(ms) {
           );
           r = r.replace(rg, '');
           r = r.substring(0, r.lastIndexOf('}'));
-    }
+        }
         // eslint-disable-next-line
         r = new Function(ps[1], ps[2], ps[3], r);
-}
+      }
 
       // 覆盖或添加到模块管理器
       _m[k] = r;
@@ -243,7 +243,7 @@ function get(cos, fs) {
     });
   });
 
-  return Promise.all(ps).then(rs => {    
+  return Promise.all(ps).then(rs => {
     rs.forEach(r => {
       if (r) add(r);
     });
