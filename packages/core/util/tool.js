@@ -130,31 +130,41 @@ function newFileName(len) {
 
 /**
  * 比较方法，用于对象数组排序，常用于数据表排序
- * @param {*} p 属性
+ * @param {*} k 对象属性key
  * @param {*} asc 升序、降序，默认升序
+ * @param {*} type 类型auto, number、datetime、string，缺省 auto
  */
-function compareObj(p, desc) {
+function compareObj(k, desc, type) {
   return function (o1, o2) {
-    let R = 0;
-    let v1 = o1[p];
-    let v2 = o2[p];
-    // 数字、日期字符串，按数字、日期排序
-    if ($.isStr(v1) || $.isStr(v2)) {
-			if ($.isDateStr(v1) && $.isDateStr(v2)) {
-				v1 = Date.parse(v1);
-				v2 = Date.parse(v2);
-			} else if ($.isNumStr(v1) && $.isNumStr(v2)) {
-				v1 = Number(v1);
-				v2 = Number(v2);
-			}			
+		let R = 0;
+		try {
+			let v1 = o1[k];
+			let v2 = o2[k];
+			// 数字、日期字符串，按数字、日期排序
+			if ($.isStr(v1) || $.isStr(v2)) {
+				// 金额可能有千字分隔符，需替换
+				if (type.toLowerCase() === 'number') {
+					v1 = v1.replaceAll(',', '');
+					v2 = v2.replaceAll(',', '');
+				}
+
+				if ($.isDateStr(v1) && $.isDateStr(v2)) {
+					v1 = Date.parse(v1);
+					v2 = Date.parse(v2);
+				} else if ($.isNumStr(v1) && $.isNumStr(v2)) {
+					v1 = Number(v1);
+					v2 = Number(v2);
+				}
+			}
+
+			if (v1 < v2) {
+				R = desc ? 1 : -1;
+			} else if (v1 > v2) {
+				R = desc ? -1 : 1;
+			}
+		} catch(ex) {
+			console.log('compareObj exp:', ex.message);
 		}
-
-    if (v1 < v2) {
-      R =  desc ? 1: -1;
-    } else if (v1 > v2) {
-      R = desc ? -1: 1;
-    }
-
     return R;
   };
 }

@@ -31,15 +31,21 @@ import Event from './event';
 export default class Page extends Event {
   constructor(app, name, title, style) {
     super(null, [app]);
-    this.app = app;
+    this.app = app; // 应用实例
     this.cfg = app.cfg;
-    this.name = name; // 名称，支持带路径：admin/login
+    this.name = name; // 名称，可带路径 admin/login
     this.title = title; // 浏览器标题
     this.style = style || `./page/${name}.css`;
-    this.path = `${name}`; // url 路径，不使用正则，直接查找
+
+    // 以下变量由路由器赋值
+    this.owner = '';
+    this.appName = '';
+    this.path = '';
     this.view = null; // 页面的div层$Dom对象，router创建实例时赋值
-    this.el = null; // $dom
-    this.$el = null; // $dom
+    this.dom = null; // 页面的div层dom对象，router创建实例时赋值
+    this.$el = null; // $dom === view
+    this.el = null; // dom === dom
+
     this.html = ''; // 页面html文本，router创建实例时赋值
     this.css = ''; // 页面css样式，router创建实例时赋值
     this.js = ''; // 页面代码，router创建实例时赋值
@@ -56,6 +62,7 @@ export default class Page extends Event {
   load(param) {
     // $.assign(this.data, param);
     this.emit('local::load pageLoad', param);
+    this.emit('pageLoad', this, param);
   }
 
   /**
@@ -68,29 +75,63 @@ export default class Page extends Event {
     // $.assign(this, {page, param, back});
     // $.assign(this.data, param);
     // 隐藏所有模板
-    this.emit('local::ready pageReady', view, param, back);
-    view.qus('[name$=-tp]').hide();
+    this.init();
+    this.emit('local::ready', view, param, back);
+    // 向上触发跨页面事件，存在安全问题
+    this.emit('pageReady', this, view, param, back);
+  }
+
+  /**
+   * 对页面进行初始化处理，或页面内容动态变更时，对局部页面容器进行初始化
+   * @param {*} v dom 容器，默认为页面实例的view
+   */
+  init(v) {
+    const {view} = this;
+    v = v ? $(v) : view;
   }
 
   // 显示已加载的页面
   // view：页面Dom层，param：参数
   show(view, param) {
+    // 隐藏所有模板
+    view.qus('[name$=-tp]').hide();
     // 防止空链接，刷新页面
     view.qus('a[href=""]').attr('href', 'javascript:;');
+    // this.init();
     if (this.reset) this.reset();
-    this.emit('local::show pageShow', view, param);
+    this.emit('local::show', view, param);
+    // 向上触发跨页面事件，存在安全问题
+    this.emit('pageShow', this, view, param);
   }
 
   // 回退显示已加载的页面
   // view：页面Dom层，param：参数
   back(view, param) {
+    // 隐藏所有模板
+    view.qus('[name$=-tp]').hide();
     // 防止空链接，刷新页面
     view.qus('a[href=""]').attr('href', 'javascript:;');
 
-    this.emit('local::back pageBack', view, param);
+    this.emit('local::back', view, param);
+    // 向上触发跨页面事件，存在安全问题
+    this.emit('pageBack', this, view, param);
+  }
+
+  change(view, param, lastParam) {
+    this.emit('local::change', view, param, lastParam);
+    // 向上触发跨页面事件，存在安全问题
+    this.emit('pageChange', this, view, param, lastParam);
   }
 
   hide(view) {
-    this.emit('local::hide pageHide', view);
+    this.emit('local::hide', view);
+    // 向上触发跨页面事件，存在安全问题
+    this.emit('pageHide', this, view);
+  }
+
+  unload(view) {
+    this.emit('local::unload', view);
+    // 向上触发跨页面事件，存在安全问题
+    this.emit('pageUnload', this, view);
   }
 }

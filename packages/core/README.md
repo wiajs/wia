@@ -78,3 +78,9 @@ The main files are:
 10. ajax.js
 11. sw.js
 12. utils.js
+
+## License
+
+[ELv2](https://www.elastic.co/cn/licensing/elastic-license)
+
+Copyright (c) 2020-present Sibyl Yu

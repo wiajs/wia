@@ -1,15 +1,9 @@
 /**
  * 扩展构造函数
- * @param {*} parameters 
+ * @param {*} parameters
  */
-export default function (parameters = {}) {
-  const {
-    defaultSelector,
-    constructor: Constructor,
-    domProp,
-    app,
-    addMethods,
-  } = parameters;
+export default function Constructors(parameters = {}) {
+  const { defaultSelector, constructor: Constructor, domProp, app, addMethods } = parameters;
   const methods = {
     create(...args) {
       if (app) return new Constructor(app, ...args);
@@ -31,8 +25,7 @@ export default function (parameters = {}) {
     addMethods.forEach(methodName => {
       methods[methodName] = (el = defaultSelector, ...args) => {
         const instance = methods.get(el);
-        if (instance && instance[methodName])
-          return instance[methodName](...args);
+        if (instance && instance[methodName]) return instance[methodName](...args);
         return undefined;
       };
     });

@@ -1,5 +1,6 @@
 /**
- * document 绑定click事件
+ * document 绑定click事件，传递到 app.on
+ * 触发所有子模块的 clicks 
  * 支持touch则绑定touch，否则绑定click
  * 无论touch 还是 click事件，都会触发事件响应函数
  * @param {*} cb

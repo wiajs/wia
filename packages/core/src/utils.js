@@ -1,4 +1,5 @@
 /* eslint no-control-regex: "off" */
+import {materialColors} from './material-colors.js';
 
 let uniqueNumber = 1;
 
@@ -11,22 +12,22 @@ const Utils = {
     return $.uid(mask, map);
   },
   mdPreloaderContent: `
-    <span class="preloader-inner">
+		<span class="preloader-inner">
 			<svg viewBox="0 0 36 36">
 				<circle cx="18" cy="18" r="16"></circle>
 			</svg>
     </span>
   `.trim(),
   iosPreloaderContent: `
-    <span class="preloader-inner">
+		<span class="preloader-inner">
 			${[0, 1, 2, 3, 4, 5, 6, 7].map(() => '<span class="preloader-inner-line"></span>').join('')}
-    </span>
+		</span>
   `.trim(),
-  auroraPreloaderContent: `
-    <span class="preloader-inner">
-      <span class="preloader-inner-circle"></span>
-    </span>
-  `,
+  pcPreloaderContent: `
+  <span class="preloader-inner">
+    <span class="preloader-inner-circle"></span>
+  </span>
+`,
   eventNameToColonCase(eventName) {
     let hasColon;
     return eventName
@@ -43,20 +44,20 @@ const Utils = {
   deleteProps(obj) {
     $.deleteProps(obj);
   },
-  nextTick(callback, delay = 0) {
-    return setTimeout(callback, delay);
+  requestAnimationFrame(cb) {
+    return $.requestAnimationFrame(cb);
+  },
+  cancelAnimationFrame(id) {
+    return $.cancelAnimationFrame(id);
+  },
+  nextTick(cb, delay = 0) {
+    return $.nextTick(cb, delay);
   },
   nextFrame(cb) {
     return $.nextFrame(cb);
   },
   now() {
     return Date.now();
-  },
-  requestAnimationFrame(cb) {
-    return $.requestAnimationFrame(cb);
-  },
-  cancelAnimationFrame(id) {
-    return $.cancelAnimationFrame(id);
   },
   parseUrlQuery(url) {
     return $.urlParam(url);
@@ -124,19 +125,27 @@ const Utils = {
     args.splice(0, 1);
     return $.assign(to, ...args);
   },
-  // °ó¶¨Àà·½·¨µ½ÀàÊµÀý£¬¸´ÖÆÀàÊôÐÔ¡¢·½·¨µ½Àà
-	bindMethods(instance, obj) { 
-		Object.keys(obj).forEach((key) => {
-			if (this.isObject(obj[key])) {
-				Object.keys(obj[key]).forEach((subKey) => {
-					if (typeof obj[key][subKey] === 'function') {
-						obj[key][subKey] = obj[key][subKey].bind(instance);
-					}
-				});
-			}
-			instance[key] = obj[key];
-		});
-	},	
+  // ç»‘å®šç±»æ–¹æ³•åˆ°ç±»å®žä¾‹ï¼Œå¤åˆ¶ç±»å±žæ€§ã€æ–¹æ³•åˆ°ç±»
+  bindMethods(instance, obj) {
+    Object.keys(obj).forEach(key => {
+      if (Utils.isObject(obj[key])) {
+        Object.keys(obj[key]).forEach(subKey => {
+          if (typeof obj[key][subKey] === 'function') {
+            obj[key][subKey] = obj[key][subKey].bind(instance);
+          }
+        });
+      }
+      instance[key] = obj[key];
+    });
+  },
+  flattenArray(...args) {
+    const arr = [];
+    args.forEach(arg => {
+      if (Array.isArray(arg)) arr.push(...flattenArray(...arg));
+      else arr.push(arg);
+    });
+    return arr;
+  },
   colorHexToRgb(hex) {
     const h = hex.replace(
       /^#?([a-f\d])([a-f\d])([a-f\d])$/i,
@@ -215,6 +224,14 @@ const Utils = {
 
     return [HSB.h, HSB.s, HSB.b];
   },
+  getShadeTintColors(rgb) {
+    const hsl = Utils.colorRgbToHsl(...rgb);
+    const hslShade = [hsl[0], hsl[1], Math.max(0, hsl[2] - 0.08)];
+    const hslTint = [hsl[0], hsl[1], Math.max(0, hsl[2] + 0.08)];
+    const shade = Utils.colorRgbToHex(...Utils.colorHslToRgb(...hslShade));
+    const tint = Utils.colorRgbToHex(...Utils.colorHslToRgb(...hslTint));
+    return {shade, tint};
+  },
   colorThemeCSSProperties(...args) {
     let hex;
     let rgb;
@@ -226,17 +243,222 @@ const Utils = {
       hex = Utils.colorRgbToHex(...rgb);
     }
     if (!rgb) return {};
-    const hsl = Utils.colorRgbToHsl(...rgb);
-    const hslShade = [hsl[0], hsl[1], Math.max(0, hsl[2] - 0.08)];
-    const hslTint = [hsl[0], hsl[1], Math.max(0, hsl[2] + 0.08)];
-    const shade = Utils.colorRgbToHex(...Utils.colorHslToRgb(...hslShade));
-    const tint = Utils.colorRgbToHex(...Utils.colorHslToRgb(...hslTint));
+    const {light, dark} = materialColors(hex);
+    const shadeTintIos = Utils.getShadeTintColors(rgb);
+    const shadeTintMdLight = Utils.getShadeTintColors(
+      Utils.colorHexToRgb(light['--f7-md-primary'])
+    );
+    const shadeTintMdDark = Utils.getShadeTintColors(Utils.colorHexToRgb(dark['--f7-md-primary']));
+    Object.keys(light).forEach(key => {
+      if (key.includes('surface-')) {
+        light[`${key}-rgb`] = Utils.colorHexToRgb(light[key]);
+      }
+    });
+    Object.keys(dark).forEach(key => {
+      if (key.includes('surface-')) {
+        dark[`${key}-rgb`] = Utils.colorHexToRgb(dark[key]);
+      }
+    });
     return {
-      '--f7-theme-color': hex,
-      '--f7-theme-color-rgb': rgb.join(', '),
-      '--f7-theme-color-shade': shade,
-      '--f7-theme-color-tint': tint,
+      ios: {
+        '--f7-theme-color': 'var(--f7-ios-primary)',
+        '--f7-theme-color-rgb': 'var(--f7-ios-primary-rgb)',
+        '--f7-theme-color-shade': 'var(--f7-ios-primary-shade)',
+        '--f7-theme-color-tint': 'var(--f7-ios-primary-tint)',
+      },
+      md: {
+        '--f7-theme-color': 'var(--f7-md-primary)',
+        '--f7-theme-color-rgb': 'var(--f7-md-primary-rgb)',
+        '--f7-theme-color-shade': 'var(--f7-md-primary-shade)',
+        '--f7-theme-color-tint': 'var(--f7-md-primary-tint)',
+      },
+      light: {
+        '--f7-ios-primary': hex,
+        '--f7-ios-primary-shade': shadeTintIos.shade,
+        '--f7-ios-primary-tint': shadeTintIos.tint,
+        '--f7-ios-primary-rgb': rgb.join(', '),
+        '--f7-md-primary-shade': shadeTintMdLight.shade,
+        '--f7-md-primary-tint': shadeTintMdLight.tint,
+        '--f7-md-primary-rgb': Utils.colorHexToRgb(light['--f7-md-primary']).join(', '),
+        ...light,
+      },
+      dark: {
+        '--f7-md-primary-shade': shadeTintMdDark.shade,
+        '--f7-md-primary-tint': shadeTintMdDark.tint,
+        '--f7-md-primary-rgb': Utils.colorHexToRgb(dark['--f7-md-primary']).join(', '),
+        ...dark,
+      },
     };
+  },
+  colorThemeCSSStyles(colors = {}) {
+    const stringifyObject = obj => {
+      let res = '';
+      Object.keys(obj).forEach(key => {
+        res += `${key}:${obj[key]};`;
+      });
+      return res;
+    };
+    const colorVars = Utils.colorThemeCSSProperties(colors.primary);
+
+    const primary = [
+      `:root{`,
+      stringifyObject(colorVars.light),
+      `--swiper-theme-color:var(--f7-theme-color);`,
+      ...Object.keys(colors).map(colorName => `--f7-color-${colorName}: ${colors[colorName]};`),
+      `}`,
+      `.dark{`,
+      stringifyObject(colorVars.dark),
+      `}`,
+      `.ios, .ios .dark{`,
+      stringifyObject(colorVars.ios),
+      '}',
+      `.md, .md .dark{`,
+      stringifyObject(colorVars.md),
+      '}',
+    ].join('');
+
+    const restVars = {};
+
+    Object.keys(colors).forEach(colorName => {
+      const colorValue = colors[colorName];
+      restVars[colorName] = Utils.colorThemeCSSProperties(colorValue);
+    });
+
+    // rest
+    let rest = '';
+
+    Object.keys(colors).forEach(colorName => {
+      const {light, dark, ios, md} = restVars[colorName];
+
+      const whiteColorVars = `
+			--f7-ios-primary: #ffffff;
+			--f7-ios-primary-shade: #ebebeb;
+			--f7-ios-primary-tint: #ffffff;
+			--f7-ios-primary-rgb: 255, 255, 255;
+			--f7-md-primary-shade: #eee;
+			--f7-md-primary-tint: #fff;
+			--f7-md-primary-rgb: 255, 255, 255;
+			--f7-md-primary: #fff;
+			--f7-md-on-primary: #000;
+			--f7-md-primary-container: #fff;
+			--f7-md-on-primary-container: #000;
+			--f7-md-secondary: #fff;
+			--f7-md-on-secondary: #000;
+			--f7-md-secondary-container: #555;
+			--f7-md-on-secondary-container: #fff;
+			--f7-md-surface: #fff;
+			--f7-md-on-surface: #000;
+			--f7-md-surface-variant: #333;
+			--f7-md-on-surface-variant: #fff;
+			--f7-md-outline: #fff;
+			--f7-md-outline-variant: #fff;
+			--f7-md-inverse-surface: #000;
+			--f7-md-inverse-on-surface: #fff;
+			--f7-md-inverse-primary: #000;
+			--f7-md-surface-1: #f8f8f8;
+			--f7-md-surface-2: #f1f1f1;
+			--f7-md-surface-3: #e7e7e7;
+			--f7-md-surface-4: #e1e1e1;
+			--f7-md-surface-5: #d7d7d7;
+			--f7-md-surface-variant-rgb: 51, 51, 51;
+			--f7-md-on-surface-variant-rgb: 255, 255, 255;
+			--f7-md-surface-1-rgb: 248, 248, 248;
+			--f7-md-surface-2-rgb: 241, 241, 241;
+			--f7-md-surface-3-rgb: 231, 231, 231;
+			--f7-md-surface-4-rgb: 225, 225, 225;
+			--f7-md-surface-5-rgb: 215, 215, 215;
+			`;
+      const blackColorVars = `
+			--f7-ios-primary: #000;
+			--f7-ios-primary-shade: #000;
+			--f7-ios-primary-tint: #232323;
+			--f7-ios-primary-rgb: 0, 0, 0;
+			--f7-md-primary-shade: #000;
+			--f7-md-primary-tint: #232323;
+			--f7-md-primary-rgb: 0, 0, 0;
+			--f7-md-primary: #000;
+			--f7-md-on-primary: #fff;
+			--f7-md-primary-container: #000;
+			--f7-md-on-primary-container: #fff;
+			--f7-md-secondary: #000;
+			--f7-md-on-secondary: #fff;
+			--f7-md-secondary-container: #aaa;
+			--f7-md-on-secondary-container: #000;
+			--f7-md-surface: #000;
+			--f7-md-on-surface: #fff;
+			--f7-md-surface-variant: #ccc;
+			--f7-md-on-surface-variant: #000;
+			--f7-md-outline: #000;
+			--f7-md-outline-variant: #000;
+			--f7-md-inverse-surface: #fff;
+			--f7-md-inverse-on-surface: #000;
+			--f7-md-inverse-primary: #fff;
+			--f7-md-surface-1: #070707;
+			--f7-md-surface-2: #161616;
+			--f7-md-surface-3: #232323;
+			--f7-md-surface-4: #303030;
+			--f7-md-surface-5: #373737;
+			--f7-md-surface-variant-rgb: 204, 204, 204;
+			--f7-md-on-surface-variant-rgb: 0, 0, 0;
+			--f7-md-surface-1-rgb: 7, 7, 7;
+			--f7-md-surface-2-rgb: 22, 22, 22;
+			--f7-md-surface-3-rgb: 35, 35, 35;
+			--f7-md-surface-4-rgb: 48, 48, 48;
+			--f7-md-surface-5-rgb: 55, 55, 55;
+			`;
+      /* eslint-disable */
+      const lightString =
+        colorName === 'white'
+          ? whiteColorVars
+          : colorName === 'black'
+          ? blackColorVars
+          : stringifyObject(light);
+      const darkString =
+        colorName === 'white'
+          ? whiteColorVars
+          : colorName === 'black'
+          ? blackColorVars
+          : stringifyObject(dark);
+      /* eslint-enable */
+      rest += [
+        `.color-${colorName} {`,
+        lightString,
+        `--swiper-theme-color: var(--f7-theme-color);`,
+        `}`,
+        `.color-${colorName}.dark, .color-${colorName} .dark, .dark .color-${colorName} {`,
+        darkString,
+        `--swiper-theme-color: var(--f7-theme-color);`,
+        `}`,
+        `.ios .color-${colorName}, .ios.color-${colorName}, .ios .dark .color-${colorName}, .ios .dark.color-${colorName} {`,
+        stringifyObject(ios),
+        `}`,
+        `.md .color-${colorName}, .md.color-${colorName}, .md .dark .color-${colorName}, .md .dark.color-${colorName} {`,
+        stringifyObject(md),
+        `}`,
+
+        // text color
+        `.text-color-${colorName} {`,
+        `--f7-theme-color-text-color: ${colors[colorName]};`,
+        `}`,
+
+        // bg color
+        `.bg-color-${colorName} {`,
+        `--f7-theme-color-bg-color: ${colors[colorName]};`,
+        `}`,
+
+        // border color
+        `.border-color-${colorName} {`,
+        `--f7-theme-color-border-color: ${colors[colorName]};`,
+        `}`,
+
+        // ripple color
+        `.ripple-color-${colorName} {`,
+        `--f7-theme-color-ripple-color: rgba(${light['--f7-ios-primary-rgb']}, 0.3);`,
+        `}`,
+      ].join('');
+    });
+
+    return `${primary}${rest}`;
   },
 };
 

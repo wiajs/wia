@@ -1,4 +1,5 @@
 /* eslint-disable import/no-extraneous-dependencies */
+
 /**
  * 自动根据page目录文件生成 src目录的pages.js 文件
  */
@@ -13,12 +14,13 @@ let _cfg = {};
 /**
  * 检查指定项目文件是否更新，如更新则重新打包，并自动部署到腾讯云CDN
  * @param {string} dir 路径
+ * @param {string} cfg 配置文件
  */
-async function pages(dir) {
+async function pages(dir, cfg) {
   let R = '';
 
   try {
-    const files = await getPage(dir);
+    const files = await getPage(dir, cfg);
     const pf = {}; // page file
     files.forEach(v => {
       let name = '';
@@ -52,13 +54,14 @@ async function pages(dir) {
 /**
  * webpack 打包文件，每个文件单独打包
  * @param {string} dir 路径
+ * @param {string} cfg 配置文件
  * 返回 {'page/login': './src/page/login.js'}
  */
-async function pack(dir) {
+async function pack(dir, cfg) {
   const R = {};
 
   try {
-    const files = await getPage(dir);
+    const files = await getPage(dir, cfg);
     files.forEach(v => {
       const fl = path.parse(v);
       const name = `${fl.dir}/${fl.name}`;
@@ -74,14 +77,16 @@ async function pack(dir) {
 /**
  * 获取指定路径中的js文件列表
  * @param {string} dir 路径
+ * @param {string} cfg 配置文件
+ * @returns {*[]}
  */
-async function getPage(dir) {
-  let R = [];
+async function getPage(dir, cfg) {
+  const R = [];
 
   try {
     dir = dir || process.cwd();
     const src = path.join(dir, './src');
-    _cfg = require(path.join(src, './config/app.js'));
+    _cfg = cfg; // require(path.join(dir, './wia.config.js')); es6 模式不支持
     const rs = [];
     // 获取目标项目目录、子目录下的文件MD5对象
     await getFile(path.join(src, './page'), rs, src);
@@ -160,23 +165,34 @@ function makeFile(pf, name, dir) {
   const src = path.join(dir, './src');
 
   const p = [];
+  const ns = [];
   Object.keys(pf).forEach(k => {
     const f = pf[k].replace(/.js$/, '');
     p.push(`import ${k} from '${f}';`);
+    ns.push(`  '${f}': ${k},`);
   });
 
-  const ns = [];
-  Object.keys(pf).forEach(k => {
-    const n = k[0].toLowerCase() + k.slice(1);
-    ns.push(`    const ${n} = new ${k}();`);
-  });
+  // Object.keys(pf).forEach(k => {
+  //   const n = k[0].toLowerCase() + k.slice(1);
+  //   ns.push(`  '${n}': ${k},`);
+  // });
 
+  // webpack
+  //   p.push(`
+  // export default class ${name[0].toUpperCase() + name.slice(1)} {
+  //   init() {
+  // ${ns.join('\n')}
+  //   }
+  // }
+  // `);
+
+  // vite
   p.push(`
-export default class ${name[0].toUpperCase() + name.slice(1)} {
-  init() {
+const ${name} = {
 ${ns.join('\n')}
-  }
-}
+};
+
+export default ${name};
 `);
 
   // 将内容写入page.js 文件
@@ -192,12 +208,8 @@ ${ns.join('\n')}
     // 有变化，则更新pages文件
     if (hash(ps) !== lastH) {
       // console.log({f, ps});
-      fs.writeFileSync(
-        f,
-        ps,
-        e => e && console.log(`save ${f} exp:${e.message}`)
-      );
-  }
+      fs.writeFileSync(f, ps, e => e && console.log(`save ${f} exp:${e.message}`));
+    }
   }
 
   return ps;
@@ -249,8 +261,9 @@ function clear(dir) {
     dir = dir || process.cwd();
     const src = path.join(dir, './src');
     const ps = `
-export default class Pages {
-}
+const pages = {};
+
+export default pages;
 `;
     let lastH = '';
     const f = path.join(src, './pages.js');
@@ -262,11 +275,7 @@ export default class Pages {
     if (hash(ps) !== lastH) {
       console.log('clear save...');
       // 将内容写入page.js 文件
-      fs.writeFileSync(
-        f,
-        ps,
-        e => e && console.log(`clear save ${f} exp:${e.message}`)
-      );
+      fs.writeFileSync(f, ps, e => e && console.log(`clear save ${f} exp:${e.message}`));
     }
   } catch (err) {
     console.log(`clear exp:${err.message}`);

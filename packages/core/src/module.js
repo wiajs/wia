@@ -1,11 +1,16 @@
 /**
  * Wia app、router等继承类，通过模块化扩展类功能
+ * 使用 use 装载，注解可能完成类似功能
+ * 不装载则需在代码中按普通泪，单独引用、创建、使用
+ * 装载的模块可能影响其他模块
  */
 import Event from './event';
 
 class Module extends Event {
   constructor(params = {}, parents = []) {
     super(params, parents);
+    const self = this;
+    self.params = params;
   }
 
   // eslint-disable-next-line
@@ -38,17 +43,14 @@ class Module extends Event {
   /**
    * 将扩展模块的相关方法、事件加载到类实例
    * @param {*} moduleName 扩展模块名称
-   * @param {*} moduleParams 
+   * @param {*} moduleParams
    */
   useModule(moduleName = '', moduleParams = {}) {
     const instance = this;
     if (!instance.modules) return;
-    
+
     // 从原型中获得的模块类引用
-    const module =
-      typeof moduleName === 'string'
-        ? instance.modules[moduleName]
-        : moduleName;
+    const module = typeof moduleName === 'string' ? instance.modules[moduleName] : moduleName;
     if (!module) return;
 
     // 扩展实例的方法和属性，Extend instance methods and props
@@ -65,21 +67,27 @@ class Module extends Event {
 
     // 将扩展模块中的on加载到实例的事件侦听中，比如 init 在实例初始化时被调用
     if (module.on && instance.on) {
-      Object.keys(module.on).forEach(moduleEventName => {
-        instance.on(moduleEventName, module.on[moduleEventName]);
-      });
+      Object.keys(module.on).forEach(eventName => {
+        // 避免模块事件异常溢出影响其他模块
+        function fn(...args) {
+          try {
+            module.on[eventName].bind(this)(...args)
+          } catch (e) {
+            console.log(`${moduleName}.on${eventName} exp:${e.message}`)
+          }
+        }
+        instance.on(eventName, fn)
+      })
     }
-    
+
     // 加载扩展模块的vnodeHooks，Add vnode hooks
     if (module.vnode) {
       if (!instance.vnodeHooks) instance.vnodeHooks = {};
       Object.keys(module.vnode).forEach(vnodeId => {
         Object.keys(module.vnode[vnodeId]).forEach(hookName => {
           const handler = module.vnode[vnodeId][hookName];
-          if (!instance.vnodeHooks[hookName])
-            instance.vnodeHooks[hookName] = {};
-          if (!instance.vnodeHooks[hookName][vnodeId])
-            instance.vnodeHooks[hookName][vnodeId] = [];
+          if (!instance.vnodeHooks[hookName]) instance.vnodeHooks[hookName] = {};
+          if (!instance.vnodeHooks[hookName][vnodeId]) instance.vnodeHooks[hookName][vnodeId] = [];
           instance.vnodeHooks[hookName][vnodeId].push(handler.bind(instance));
         });
       });
@@ -93,7 +101,7 @@ class Module extends Event {
 
   /**
    * 实例创建初始化时，执行扩展模块中定义的相关回调
-   * @param {*} modulesParams 
+   * @param {*} modulesParams
    */
   useModules(modulesParams = {}) {
     const instance = this;
@@ -118,9 +126,7 @@ class Module extends Event {
   static installModule(module, ...params) {
     const Class = this;
     if (!Class.prototype.modules) Class.prototype.modules = {};
-    const name =
-      module.name ||
-      `${Object.keys(Class.prototype.modules).length}_${$.now()}`;
+    const name = module.name || `${Object.keys(Class.prototype.modules).length}_${$.now()}`;
     // 原型属性中引用该模块类，类实例
     Class.prototype.modules[name] = module;
     // 模块如果定义了原型，则将模块原型加载到类原型
@@ -143,9 +149,9 @@ class Module extends Event {
   }
 
   /**
-   * 加载类扩展模块到类
-   * @param {*} module 
-   * @param  {...any} params 
+   * 加载扩展模块到类
+   * @param {*} module
+   * @param  {...any} params
    */
   static use(module, ...params) {
     const Class = this;
