@@ -1,6 +1,5 @@
 {
   "name": "wia",
-  "version": "0.1.14",
   "description": "Full framework for building large and fast web app quickly.",
   "scripts": {
   },
@@ -15,7 +14,6 @@
     "name": "Sibyl Yu",
     "email": "sibyl@wia.pub"
   },
-  "license": "MIT",
   "bugs": {
     "url": "https://github.com/wiajs/wia/issues"
   },

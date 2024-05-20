@@ -1,3 +1,7 @@
+packages/base/dist/
+packages/core/dist/
+packages/dom/dist/
+
 # OS generated files #
 ######################
 .DS_Store
